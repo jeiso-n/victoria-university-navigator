@@ -1,4 +1,4 @@
-<!DOCTYPE html>
+﻿<!DOCTYPE html>
 <html lang="en">
 <head>
   <meta charset="UTF-8">
@@ -38,9 +38,32 @@
           spellcheck="false"
         >
         <div class="search-results" id="searchResults" role="listbox" aria-label="Search results"></div>
-      </div>
+            </div>
+            <button class="nav-hamburger" id="nav-hamburger" aria-label="Open navigation menu" aria-expanded="false">&#9776;</button>
+        </div>
+    </header>
+  <!-- ── MOBILE SIDE DRAWER ── -->
+  <div class="nav-overlay" id="nav-overlay" aria-hidden="true"></div>
+  <nav class="nav-drawer" id="nav-drawer" aria-label="Mobile Navigation">
+    <div class="nav-drawer-header">
+      <a href="index.html" class="nav-drawer-brand" aria-label="Victoria University Home">
+        <img src="images/vu-logo.jpg" alt="VU Logo" class="nav-drawer-logo">
+        <div class="nav-drawer-brand-text">
+          <span class="nav-drawer-title">Victoria University</span>
+          <span class="nav-drawer-subtitle">Tower Navigator</span>
+        </div>
+      </a>
+      <button class="nav-drawer-close" id="nav-drawer-close" aria-label="Close navigation menu">&times;</button>
     </div>
-  </header>
+    <div class="nav-drawer-links">
+      <a href="index.html">Home</a>
+      <a href="directions.html">Rooms &amp; Directions</a>
+      <a href="new-student-guide.html">New Student Guide</a>
+      <a href="facilities.html">Facilities</a>
+      <a href="about.html" class="active">About Us</a>
+    </div>
+    <div class="nav-drawer-footer">Victoria University · Market Plaza Tower</div>
+  </nav>
 
   <main>
     <section class="page-hero">

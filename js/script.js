@@ -334,16 +334,59 @@ function initFadeIn() {
   document.querySelectorAll('.fade-up').forEach(el => observer.observe(el));
 }
 
-// ─── STICKY COMPACT HEADER ────────────────────────────────────────
-function initStickyHeader() {
-  const header = document.querySelector('header');
-  if (!header) return;
-  const THRESHOLD = 60; // px scrolled before compacting
-  function onScroll() {
-    header.classList.toggle('scrolled', window.scrollY > THRESHOLD);
+// ─── MOBILE SIDE DRAWER ───────────────────────────────────────────
+function initMobileDrawer() {
+  const hamburger = document.getElementById('nav-hamburger');
+  const drawer    = document.getElementById('nav-drawer');
+  const overlay   = document.getElementById('nav-overlay');
+  if (!hamburger || !drawer || !overlay) return;
+
+  const OPEN_ICON  = '\u2630'; // ☰
+  const CLOSE_ICON = '\u2715'; // ✕
+
+  function openDrawer() {
+    drawer.classList.add('open');
+    overlay.classList.add('open');
+    document.body.style.overflow = 'hidden';
+    hamburger.setAttribute('aria-expanded', 'true');
+    hamburger.innerHTML = CLOSE_ICON;
+    hamburger.setAttribute('aria-label', 'Close navigation menu');
   }
-  window.addEventListener('scroll', onScroll, { passive: true });
-  onScroll(); // run once on load in case page is already scrolled
+
+  function closeDrawer() {
+    drawer.classList.remove('open');
+    overlay.classList.remove('open');
+    document.body.style.overflow = '';
+    hamburger.setAttribute('aria-expanded', 'false');
+    hamburger.innerHTML = OPEN_ICON;
+    hamburger.setAttribute('aria-label', 'Open navigation menu');
+  }
+
+  hamburger.addEventListener('click', () => {
+    if (drawer.classList.contains('open')) {
+      closeDrawer();
+    } else {
+      openDrawer();
+    }
+  });
+
+  overlay.addEventListener('click', closeDrawer);
+
+  // Close on Escape
+  document.addEventListener('keydown', (e) => {
+    if (e.key === 'Escape' && drawer.classList.contains('open')) {
+      closeDrawer();
+    }
+  });
+
+  // Close when any drawer link is clicked
+  drawer.querySelectorAll('.nav-drawer-links a').forEach(link => {
+    link.addEventListener('click', closeDrawer);
+  });
+
+  // Close button inside drawer header
+  const closeBtn = drawer.querySelector('.nav-drawer-close');
+  if (closeBtn) closeBtn.addEventListener('click', closeDrawer);
 }
 
 // ─── BACK TO TOP BUTTON ───────────────────────────────────────────
@@ -415,7 +458,7 @@ document.addEventListener('DOMContentLoaded', () => {
   initAnchorHighlight();
   initLightbox();
   initFadeIn();
-  initStickyHeader();
+  initMobileDrawer();
   initBackToTop();
   initFloorMapLinks();
 });
