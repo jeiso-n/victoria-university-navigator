@@ -725,11 +725,15 @@ body.home-page {
    HOMEPAGE FLOOR SELECTOR GRID
    ========================================================================== */
 .floor-selector {
-  background: #ffffff;
+  background-image: linear-gradient(rgba(10, 31, 61, 0.72), rgba(10, 31, 61, 0.72)),
+                    url('../images/backgroundimage1.jpeg');
+  background-size: cover;
+  background-position: center;
+  background-repeat: no-repeat;
   border: 1px solid var(--border);
   border-radius: var(--radius-xl);
   padding: 1.5rem 2rem;
-  box-shadow: var(--shadow-sm);
+  box-shadow: var(--shadow-lg);
   margin-bottom: 1.25rem;
   text-align: center;
 }
@@ -741,14 +745,14 @@ body.home-page {
 .floor-selector h2 {
   font-size: 1.35rem;
   font-weight: 800;
-  color: var(--vu-navy);
+  color: #ffffff;
   letter-spacing: -0.01em;
   margin-bottom: 0.35rem;
 }
 
 .floor-selector-desc {
   font-size: 0.92rem;
-  color: var(--text-muted);
+  color: rgba(255, 255, 255, 0.80);
 }
 
 .floor-grid {
