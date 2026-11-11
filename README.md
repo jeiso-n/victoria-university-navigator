@@ -109,9 +109,8 @@ No Java, Docker, database, Node.js, or development environment is needed by a vi
 
 ## Project Credits
 
-- **Student:** Muganzi Joel (VU-CSF-2603-1860-DAY)
-- **Supervisor:** Mr. Sebastian Lutaalo
-- **Institution:** Victoria University
+- **Jeison_Muganzi**
+
 
 ## Notes
 
