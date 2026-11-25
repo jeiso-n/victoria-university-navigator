@@ -3486,6 +3486,20 @@ body.dark-mode header {
   color: #f1f5f9;
 }
 
+[data-theme="dark"] .vu3d-back-2d,
+[data-theme="dark"] .vu3d-step-floor-pill,
+[data-theme="dark"] .vu3d-step-fl,
+[data-theme="dark"] .vu3d-res-floor,
+[data-theme="dark"] .card-3d-link {
+  background: #0284c7;
+  color: #ffffff;
+  border-color: #38bdf8;
+}
+
+[data-theme="dark"] .vu3d-back-2d:hover {
+  background: #0ea5e9;
+}
+
 [data-theme="dark"] .vu3d-brand-badge strong,
 [data-theme="dark"] .vu3d-label,
 [data-theme="dark"] .vu3d-room-header h3,

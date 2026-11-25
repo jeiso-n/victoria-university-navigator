@@ -405,12 +405,141 @@ async function run() {
       await cdp.eval("document.getElementById('vu3d-next-step').click()");
       const idxAfter = await cdp.eval("window.__VU_NAVIGATOR__.activeStepIdx");
       assert.equal(idxAfter, idxBefore + 1);
+      assertNoBrowserErrors('3D search & routing');
+    });
+
+    await test('Ground Floor Reception relocation, Purple Elevator Cores, Basement B1/B2 Isolation, Persistent Pin, NFS Animated Arrows, Full Labels & Dark Mode', async () => {
+      resetErrors();
+      const scratchDir = 'C:\\Users\\jeis\\.gemini\\antigravity\\brain\\edef16da-96f0-48d9-b90a-a379bec4162a\\scratch';
+      fs.mkdirSync(scratchDir, { recursive: true });
+      const snap = async (filename) => {
+        await new Promise(r => setTimeout(r, 850));
+        const { data } = await cdp.send('Page.captureScreenshot', { format: 'png' });
+        fs.writeFileSync(path.join(scratchDir, filename), Buffer.from(data, 'base64'));
+      };
+
+      // 1. Check full human-readable labels across floor rail & bottom step bar
+      const labelAudit = await cdp.eval(`(() => {
+        const pills = [...document.querySelectorAll('.vu3d-floor-rail .vu3d-floor-pill')].map(b => b.textContent.trim());
+        const stepPill = document.getElementById('vu3d-step-floor-pill')?.textContent.trim();
+        return { pills, stepPill };
+      })()`);
+      assert.deepEqual(labelAudit.pills, [
+        'All Floors', 'Floor 9', 'Floor 8', 'Floor 7', 'Floor 6', 'Floor 5',
+        'Floor 4', 'Floor 3', 'Floor 2', 'Floor 1', 'Ground Floor', 'Basement 1', 'Basement 2',
+      ]);
+      assert.ok(!/^FL\s*\d+$|^FL\s*G$|^B[12]$|^G$/.test(labelAudit.stepPill), `Step floor pill used abbreviation: ${labelAudit.stepPill}`);
+
+      // 2. Check Ground Floor Reception coordinates & Elevator purple cores across all 12 levels
+      const archAudit = await cdp.eval(`(() => {
+        const nav = window.__VU_NAVIGATOR__;
+        const sm = nav.sceneManager;
+        const recMesh = sm.building.roomMeshById.get('reception');
+        const elevCount = [...sm.building.floors.values()].filter(f => {
+          let found = false;
+          f.group.traverse(o => { if (o.userData?.isElevatorCore) found = true; });
+          return found;
+        }).length;
+        return {
+          recX: recMesh ? recMesh.position.x : null,
+          recZ: recMesh ? recMesh.position.z : null,
+          elevCount,
+        };
+      })()`);
+      assert.ok(archAudit.recX > 0.5 && archAudit.recX < 1.5 && archAudit.recZ < -12, `Unexpected reception position: ${JSON.stringify(archAudit)}`);
+      assert.equal(archAudit.elevCount, 12, 'Expected purple elevator core on all 12 levels');
+
+      // Switch explicitly to Isolate Floor mode and test Ground Floor + Basements B2 & B1 + all 12 levels
+      await cdp.eval("document.querySelector('.vu3d-view-btn[data-view=\"isolated\"]').click()");
+      await cdp.eval("document.querySelector('.vu3d-floor-pill[data-floor=\"G\"]').click()");
+      await snap('verify_ground_reception.png');
+
+      // 3. Test Basement 2 & Basement 1 isolation hides Ground Plaza and all upper floors cleanly
+      await cdp.eval("document.querySelector('.vu3d-floor-pill[data-floor=\"B2\"]').click()");
+      await snap('verify_basement2_isolated.png');
+
+      for (const fCode of ['B2', 'B1', 'G', '1', '2', '3', '4', '5', '6', '7', '8', '9']) {
+        await cdp.eval(`document.querySelector('.vu3d-floor-pill[data-floor="${fCode}"]').click()`);
+        const vis = await cdp.eval(`(() => {
+          const b = window.__VU_NAVIGATOR__.sceneManager.building;
+          const visibleFloors = [...b.floors.entries()].filter(([, e]) => e.group.visible).map(([k]) => k);
+          return {
+            mode: window.__VU_NAVIGATOR__.viewMode,
+            visibleFloors,
+            plazaVisible: b.groundPlazaGroup.visible,
+            verticalCoreVisible: b.verticalCoreGroup.visible,
+          };
+        })()`);
+        assert.equal(vis.mode, 'isolated');
+        assert.deepEqual(vis.visibleFloors, [fCode]);
+        assert.equal(vis.plazaVisible, false, `Ground plaza must be hidden when isolating ${fCode}`);
+        assert.equal(vis.verticalCoreVisible, false);
+      }
+
+      // Return to Basement 1 for persistence check (so destination Room 305 on Floor 3 is currently hidden)
+      await cdp.eval("document.querySelector('.vu3d-floor-pill[data-floor=\"B1\"]').click()");
+
+      // 4. Test Isolate Floor works on all 12 levels & destination pin persists across floor changes
+      // Room 305 is still selected from earlier test
+      const pinCheckWhileHidden = await cdp.eval(`(() => {
+        const nav = window.__VU_NAVIGATOR__;
+        const rmMgr = nav.sceneManager.roomManager;
+        return {
+          selectedRoomId: nav.selectedRoom?.id,
+          rmMgrSelectedId: rmMgr.selectedRoomId,
+          pinVisibleOnB1: rmMgr.highlightGroup.visible,
+          bannerText: document.querySelector('.vu3d-pinned-banner')?.innerText || '',
+        };
+      })()`);
+      assert.equal(pinCheckWhileHidden.selectedRoomId, 'room-305');
+      assert.equal(pinCheckWhileHidden.rmMgrSelectedId, 'room-305');
+      assert.equal(pinCheckWhileHidden.pinVisibleOnB1, false, 'Pin should hide when destination floor is not visible');
+      assert.ok(pinCheckWhileHidden.bannerText.includes('Pinned on Floor 3'), `Missing cross-floor pinned banner: ${pinCheckWhileHidden.bannerText}`);
+
+      // Jump back to Floor 3 via pinned banner CTA & verify pin + animated arrows restore
+      await cdp.eval("document.getElementById('vu3d-jump-pinned').click()");
+      const pinRestored = await cdp.eval(`(() => {
+        const nav = window.__VU_NAVIGATOR__;
+        const sm = nav.sceneManager;
+        const rr = sm.routeRenderer;
+        const arrows = rr.arrowMeshes;
+        const emBefore = arrows.find(a => a.visible)?.material.emissiveIntensity ?? 0;
+        rr.update(0.35);
+        const emAfter = arrows.find(a => a.visible)?.material.emissiveIntensity ?? 0;
+        return {
+          activeFloor: nav.activeFloor,
+          pinVisible: sm.roomManager.highlightGroup.visible,
+          arrowCount: arrows.length,
+          visibleArrows: arrows.filter(a => a.visible).length,
+          emissiveChanged: Math.abs(emAfter - emBefore) > 0.001,
+        };
+      })()`);
+      assert.equal(pinRestored.activeFloor, '3');
+      assert.equal(pinRestored.pinVisible, true, 'Destination pin must restore when returning to Floor 3');
+      assert.ok(pinRestored.arrowCount >= 5 && pinRestored.visibleArrows >= 1, `Expected visible NFS arrows: ${JSON.stringify(pinRestored)}`);
+      assert.equal(pinRestored.emissiveChanged, true, 'Expected animated arrow pulse update over time');
+      await snap('verify_floor3_pin_arrows.png');
+
+      // 5. Test Dark Mode persistence + 3D background theme update + Light Mode toggle back
+      await cdp.eval("document.getElementById('vu3d-theme-toggle').click()");
+      const darkState = await cdp.eval(`(() => ({
+        attr: document.documentElement.getAttribute('data-theme'),
+        stored: localStorage.getItem('vu_theme_v1'),
+        bgHex: window.__VU_NAVIGATOR__.sceneManager.scene.background.getHex(),
+      }))()`);
+      assert.equal(darkState.attr, 'dark');
+      assert.equal(darkState.stored, 'dark');
+      assert.equal(darkState.bgHex, 0x0b1325);
+      await snap('verify_dark_mode_3d.png');
+
+      await cdp.eval("document.getElementById('vu3d-theme-toggle').click()");
+      assert.equal(await cdp.eval("localStorage.getItem('vu_theme_v1')"), 'light');
 
       // Exit back to 2D MAP
       await cdp.eval("document.getElementById('btn-mode-2d').click()");
       const stillOpen = await cdp.eval("document.getElementById('vu-3d-overlay').classList.contains('open')");
       assert.equal(stillOpen, false);
-      assertNoBrowserErrors('3D search, routing & switch back to 2D');
+      assertNoBrowserErrors('Section 8 full verification');
     });
 
     // 2. Mobile (390x844) on directions.html & floors/floor-3.html

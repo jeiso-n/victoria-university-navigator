@@ -10,6 +10,7 @@ import {
   AUDIT_SUMMARY,
   findRoomByIdOrAlias,
   searchRooms,
+  formatFloorLabel,
 } from '../js/data/building-data.js';
 import { SVG_GEOMETRY_CACHE } from '../js/data/svg-geometry-cache.js';
 import { NavigationGraph, lineWallIntersection } from '../js/3d/navigation-graph.js';
@@ -182,6 +183,39 @@ test('Floor 4 (Under Construction) route includes verification/renovation notice
   const r = pathfinder.findRoute('main-entrance', 'floor-4-pharmacy', { mode: 'elevator' });
   assert.ok(r);
   assert.ok(r.steps.some(s => s.kind === 'notice' && s.instruction.includes('under construction')));
+});
+
+test('Ground Floor Reception is relocated to open lobby and red-circled core obstructions are removed', () => {
+  const reception = findRoomByIdOrAlias('reception');
+  assert.ok(reception);
+  assert.deepEqual(reception.bounds, [-1.8, -18.5, 3.6, -11.0]);
+  const gWalls = SVG_GEOMETRY_CACHE['G'].walls;
+  const hasLeftRedWall = gWalls.some(w => Math.abs(w[0] - (-6.706)) < 0.05 && Math.abs(w[2] - (-6.706)) < 0.05);
+  const hasRightRedWall = gWalls.some(w => Math.abs(w[0] - 2.694) < 0.05 && Math.abs(w[2] - 2.694) < 0.05);
+  assert.equal(hasLeftRedWall, false, 'Left red-circled wall on Ground Floor must be removed');
+  assert.equal(hasRightRedWall, false, 'Right red-circled wall on Ground Floor must be removed');
+});
+
+test('Full human-readable floor labels expand all 12 levels cleanly with no abbreviations', () => {
+  const expectedLabels = {
+    B2: 'Basement 2',
+    B1: 'Basement 1',
+    G: 'Ground Floor',
+    1: 'Floor 1',
+    2: 'Floor 2',
+    3: 'Floor 3',
+    4: 'Floor 4',
+    5: 'Floor 5',
+    6: 'Floor 6',
+    7: 'Floor 7',
+    8: 'Floor 8',
+    9: 'Floor 9',
+  };
+  for (const [code, label] of Object.entries(expectedLabels)) {
+    assert.equal(formatFloorLabel(code), label);
+  }
+  const downStairs = pathfinder.findRoute('room-902', 'dance', { mode: 'stairs' });
+  assert.ok(downStairs && downStairs.steps.some(s => s.instruction.includes('Basement 2')));
 });
 
 console.log(`\nSummary: ${passed} passed. Audit stats: ${JSON.stringify(AUDIT_SUMMARY)}`);
