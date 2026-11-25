@@ -80,7 +80,7 @@ class NavigatorController {
     `;
 
     const hamburger = headerInner.querySelector('.nav-hamburger');
-    if (hamburger) {
+    if (hamburger && hamburger.parentNode === headerInner) {
       headerInner.insertBefore(toggle, hamburger);
     } else {
       headerInner.appendChild(toggle);
