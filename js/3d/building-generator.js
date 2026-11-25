@@ -10,7 +10,7 @@ import {
   BUILDING_DEPTH,
 } from '../data/building-data.js';
 import { loadFloorGeometry } from './svg-parser.js';
-import { buildFloorGroup } from './floor-generator.js';
+import { buildFloorGroup, applyFloorTheme } from './floor-generator.js';
 
 export class BuildingGenerator {
   constructor(basePath = '.') {
@@ -24,6 +24,11 @@ export class BuildingGenerator {
     this.verticalCoreGroup = new THREE.Group();
     this.verticalCoreGroup.name = 'vertical-cores';
     this.rootGroup.add(this.verticalCoreGroup);
+    this.groundPlazaGroup = new THREE.Group();
+    this.groundPlazaGroup.name = 'ground-context-plaza';
+    this.rootGroup.add(this.groundPlazaGroup);
+    this.plazaMesh = null;
+    this.walkwayMesh = null;
 
     this.viewMode = 'building';    // 'building' | 'isolated' | 'cutaway' | 'exploded'
     this.activeFloorCode = 'G';
@@ -143,15 +148,17 @@ export class BuildingGenerator {
     plaza.rotation.x = -Math.PI / 2;
     plaza.position.set(0, -0.32, 0);
     plaza.receiveShadow = true;
-    this.rootGroup.add(plaza);
+    this.plazaMesh = plaza;
+    this.groundPlazaGroup.add(plaza);
 
     // Front approach walkway leading to Main Entrance (South side Z = +27..+40)
     const walkway = new THREE.Mesh(
       new THREE.BoxGeometry(10, 0.06, 14),
       new THREE.MeshStandardMaterial({ color: 0xcbd5e1, roughness: 0.85 })
     );
-    walkway.position.set(0, -0.28, BUILDING_DEPTH / 2 + 7);
-    this.rootGroup.add(walkway);
+    walkway.position.set(6.0, -0.28, BUILDING_DEPTH / 2 + 7);
+    this.walkwayMesh = walkway;
+    this.groundPlazaGroup.add(walkway);
   }
 
   getFloorY(floorCode) {
@@ -194,6 +201,18 @@ export class BuildingGenerator {
       }
     }
 
+    // Hide the Ground context slab whenever isolating any floor (especially Basement 1 & Basement 2)
+    // or when cutting away down to a basement level
+    if (this.groundPlazaGroup) {
+      if (mode === 'isolated' || mode === 'exploded') {
+        this.groundPlazaGroup.visible = false;
+      } else if (mode === 'cutaway') {
+        this.groundPlazaGroup.visible = activeLevel >= 0;
+      } else {
+        this.groundPlazaGroup.visible = true;
+      }
+    }
+
     // Vertical shaft visibility & scaling
     if (mode === 'exploded') {
       this.verticalCoreGroup.visible = true;
@@ -203,6 +222,16 @@ export class BuildingGenerator {
     } else {
       this.verticalCoreGroup.visible = true;
       this.verticalCoreGroup.scale.y = 1;
+    }
+  }
+
+  setTheme(isDark) {
+    applyFloorTheme(isDark);
+    if (this.plazaMesh) {
+      this.plazaMesh.material.color.setHex(isDark ? 0x0f172a : 0xe2e8f0);
+    }
+    if (this.walkwayMesh) {
+      this.walkwayMesh.material.color.setHex(isDark ? 0x1e293b : 0xcbd5e1);
     }
   }
 

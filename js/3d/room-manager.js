@@ -139,6 +139,16 @@ export class RoomManager {
 
     pinGroup.add(cone, head);
     this.highlightGroup.add(pinGroup);
+    this.updatePinVisibility(rm.floor);
+  }
+
+  updatePinVisibility(floorCode) {
+    if (!this.selectedRoomId) {
+      this.highlightGroup.visible = false;
+      return;
+    }
+    const entry = this.building.floors.get(floorCode);
+    this.highlightGroup.visible = entry ? Boolean(entry.group.visible) : true;
   }
 
   refreshSelectionPosition() {

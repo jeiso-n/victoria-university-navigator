@@ -59,10 +59,10 @@ export class CameraController {
 
   flyToFloor(floorCode, topDown = false) {
     const y = this.building.getFloorY(floorCode);
-    const target = new THREE.Vector3(0, y + 0.5, 0);
+    const target = new THREE.Vector3(0, y + 0.8, 0);
     const pos = topDown
-      ? new THREE.Vector3(0, y + 48, 0.01)
-      : new THREE.Vector3(28, y + 26, 36);
+      ? new THREE.Vector3(0, y + 44, 0.01)
+      : new THREE.Vector3(21, y + 20, 27);
     this.transitionTo(pos, target, 0.75);
   }
 

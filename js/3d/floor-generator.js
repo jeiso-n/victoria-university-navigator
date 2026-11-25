@@ -10,7 +10,9 @@ import {
   SLAB_THICKNESS,
   WALL_HEIGHT,
   ENHANCED_ROOM_DB,
+  formatFloorLabel,
 } from '../data/building-data.js';
+import { FLOOR_CORRIDOR_LAYOUTS } from './navigation-graph.js';
 
 const CATEGORY_COLORS = {
   office:   0x1b365d, // VU Navy
@@ -45,11 +47,55 @@ const sharedMaterials = {
     roughness: 0.3,
   }),
   toiletFloor: new THREE.MeshStandardMaterial({ color: 0x86efac, roughness: 0.7 }),
-  elevatorFloor: new THREE.MeshStandardMaterial({ color: 0xc084fc, roughness: 0.5, metalness: 0.2 }),
+  elevatorFloor: new THREE.MeshStandardMaterial({
+    color: 0x9333ea,
+    emissive: 0x581c87,
+    emissiveIntensity: 0.4,
+    roughness: 0.35,
+    metalness: 0.25,
+  }),
+  elevatorWall: new THREE.MeshPhysicalMaterial({
+    color: 0x7c3aed,
+    emissive: 0x4c1d95,
+    emissiveIntensity: 0.28,
+    transparent: true,
+    opacity: 0.52,
+    roughness: 0.25,
+    depthWrite: false,
+  }),
+  elevatorDoor: new THREE.MeshStandardMaterial({
+    color: 0xa855f7,
+    emissive: 0x7c3aed,
+    emissiveIntensity: 0.45,
+    roughness: 0.28,
+    metalness: 0.55,
+  }),
+  elevatorFrame: new THREE.MeshStandardMaterial({
+    color: 0x6d28d9,
+    emissive: 0x4c1d95,
+    emissiveIntensity: 0.3,
+    roughness: 0.35,
+    metalness: 0.4,
+  }),
   stairStep: new THREE.MeshStandardMaterial({ color: 0x94a3b8, roughness: 0.6, metalness: 0.2 }),
   stairRail: new THREE.MeshStandardMaterial({ color: 0x0f2242, roughness: 0.4, metalness: 0.6 }),
   constructionStripe: new THREE.MeshStandardMaterial({ color: 0xf59e0b, roughness: 0.65 }),
 };
+
+export function applyFloorTheme(isDark) {
+  sharedMaterials.slabTop.color.setHex(isDark ? 0x162238 : 0xf1f5f9);
+  sharedMaterials.slabEdge.color.setHex(isDark ? 0x263859 : 0xcbd5e1);
+  sharedMaterials.interiorWall.color.setHex(isDark ? 0x293954 : 0xe2e8f0);
+  sharedMaterials.exteriorGlass.color.setHex(isDark ? 0x38bdf8 : 0xbae6fd);
+  sharedMaterials.exteriorGlass.opacity = isDark ? 0.16 : 0.22;
+  sharedMaterials.mullion.color.setHex(isDark ? 0x0f172a : 0x1e293b);
+  sharedMaterials.doorFrame.color.setHex(isDark ? 0x60a5fa : 0x1b365d);
+  sharedMaterials.doorPanel.color.setHex(isDark ? 0x38bdf8 : 0x00a0df);
+  sharedMaterials.stairStep.color.setHex(isDark ? 0x64748b : 0x94a3b8);
+  sharedMaterials.stairRail.color.setHex(isDark ? 0x93c5fd : 0x0f2242);
+  sharedMaterials.elevatorFloor.emissiveIntensity = isDark ? 0.62 : 0.4;
+  sharedMaterials.elevatorDoor.emissiveIntensity = isDark ? 0.65 : 0.45;
+}
 
 /**
  * Splits a wall segment [x1, z1, x2, z2] by any door openings collinear with it,
@@ -184,27 +230,27 @@ function roundRect(ctx, x, y, w, h, r) {
 
 function createFloorBadgeSprite(floorCode) {
   const canvas = document.createElement('canvas');
-  canvas.width = 180;
+  canvas.width = 340;
   canvas.height = 84;
   const ctx = canvas.getContext('2d');
 
   ctx.fillStyle = floorCode === 'G' ? '#059669' : floorCode.startsWith('B') ? '#475569' : '#1b365d';
-  roundRect(ctx, 4, 4, 172, 76, 16);
+  roundRect(ctx, 4, 4, 332, 76, 16);
   ctx.fill();
   ctx.strokeStyle = '#ffffff';
   ctx.lineWidth = 4;
   ctx.stroke();
 
   ctx.fillStyle = '#ffffff';
-  ctx.font = 'bold 40px Inter, Segoe UI, sans-serif';
+  ctx.font = 'bold 34px Inter, Segoe UI, sans-serif';
   ctx.textAlign = 'center';
   ctx.textBaseline = 'middle';
-  ctx.fillText(floorCode === 'G' ? 'G' : `FL ${floorCode}`, 90, 44);
+  ctx.fillText(formatFloorLabel(floorCode), 170, 44);
 
   const texture = new THREE.CanvasTexture(canvas);
   texture.minFilter = THREE.LinearFilter;
   const sprite = new THREE.Sprite(new THREE.SpriteMaterial({ map: texture, transparent: true }));
-  sprite.scale.set(4.2, 1.95, 1);
+  sprite.scale.set(6.2, 1.54, 1);
   return sprite;
 }
 
@@ -353,19 +399,124 @@ export function buildFloorGroup(floorDef, floorGeom) {
     group.add(sp);
   }
 
-  // 5. Elevator Landing Zone
-  if (floorGeom.elevator) {
-    const [ex1, ez1, ex2, ez2] = floorGeom.elevator;
-    const ew = Math.max(1.5, ex2 - ex1);
-    const ed = Math.max(1.5, ez2 - ez1);
-    const pad = new THREE.Mesh(new THREE.BoxGeometry(ew, 0.08, ed), sharedMaterials.elevatorFloor);
-    pad.position.set((ex1 + ex2) / 2, 0.04, (ez1 + ez2) / 2);
-    group.add(pad);
-    const sp = createLabelSprite('ELEVATORS', `Floor ${floorDef.code}`, '#7c3aed');
-    sp.position.set((ex1 + ex2) / 2, 2.75, (ez1 + ez2) / 2);
-    sp.scale.set(3.4, 1.05, 1);
+  // 5. Purple Elevator Core & Open-Approach Staircases
+  const fullFloorName = formatFloorLabel(floorDef.code);
+  const elevCoords = floorGeom.elevator || [-4.0, -25.0, 4.0, -21.0];
+  {
+    const [ex1, ez1, ex2, ez2] = elevCoords;
+    const ew = Math.max(2.6, ex2 - ex1);
+    const ed = Math.max(2.0, ez2 - ez1);
+    const ecx = (ex1 + ex2) / 2;
+    const ecz = (ez1 + ez2) / 2;
+
+    const elevGroup = new THREE.Group();
+    elevGroup.name = `elevator-core-${floorDef.code}`;
+    elevGroup.userData.isElevatorCore = true;
+
+    // Distinct purple landing pad
+    const pad = new THREE.Mesh(new THREE.BoxGeometry(ew + 0.3, 0.1, ed + 0.5), sharedMaterials.elevatorFloor);
+    pad.position.set(ecx, 0.05, ecz + 0.15);
+    pad.userData.isElevatorSurface = true;
+    elevGroup.add(pad);
+
+    // Glowing purple rim
+    const padRim = new THREE.LineSegments(
+      new THREE.EdgesGeometry(new THREE.BoxGeometry(ew + 0.34, 0.12, ed + 0.54)),
+      new THREE.LineBasicMaterial({ color: 0xd8b4fe })
+    );
+    padRim.position.copy(pad.position);
+    elevGroup.add(padRim);
+
+    // Translucent purple back & side walls (front remains open for entrance doors)
+    const coreH = 2.65;
+    const backWall = new THREE.Mesh(new THREE.BoxGeometry(ew, coreH, 0.14), sharedMaterials.elevatorWall);
+    backWall.position.set(ecx, coreH / 2, ez1);
+    backWall.userData.isElevatorSurface = true;
+
+    const leftWall = new THREE.Mesh(new THREE.BoxGeometry(0.14, coreH, ed), sharedMaterials.elevatorWall);
+    leftWall.position.set(ex1, coreH / 2, ecz);
+    leftWall.userData.isElevatorSurface = true;
+
+    const rightWall = new THREE.Mesh(new THREE.BoxGeometry(0.14, coreH, ed), sharedMaterials.elevatorWall);
+    rightWall.position.set(ex2, coreH / 2, ecz);
+    rightWall.userData.isElevatorSurface = true;
+
+    // Front portal + parted purple elevator double doors along South face (z = ez2)
+    const portalW = Math.min(ew * 0.72, 3.6);
+    const openGap = Math.min(1.6, portalW * 0.48);
+    const doorLeafW = Math.max(0.55, (portalW - openGap) / 2);
+    const doorH = 2.25;
+
+    const doorLeft = new THREE.Mesh(new THREE.BoxGeometry(doorLeafW, doorH, 0.1), sharedMaterials.elevatorDoor);
+    doorLeft.position.set(ecx - (openGap / 2 + doorLeafW / 2), doorH / 2, ez2);
+    doorLeft.userData.isElevatorDoor = true;
+
+    const doorRight = new THREE.Mesh(new THREE.BoxGeometry(doorLeafW, doorH, 0.1), sharedMaterials.elevatorDoor);
+    doorRight.position.set(ecx + (openGap / 2 + doorLeafW / 2), doorH / 2, ez2);
+    doorRight.userData.isElevatorDoor = true;
+
+    const portalHeader = new THREE.Mesh(new THREE.BoxGeometry(ew, coreH - doorH, 0.16), sharedMaterials.elevatorFrame);
+    portalHeader.position.set(ecx, doorH + (coreH - doorH) / 2, ez2);
+    portalHeader.userData.isElevatorSurface = true;
+
+    const topCap = new THREE.Mesh(new THREE.BoxGeometry(ew + 0.1, 0.12, ed + 0.1), sharedMaterials.elevatorWall);
+    topCap.position.set(ecx, coreH + 0.06, ecz);
+
+    elevGroup.add(backWall, leftWall, rightWall, doorLeft, doorRight, portalHeader, topCap);
+
+    const sp = createLabelSprite('🛗 Elevators', fullFloorName, '#7c3aed');
+    sp.position.set(ecx, 3.2, ecz + 0.4);
+    sp.scale.set(3.8, 1.18, 1);
     labelSprites.push(sp);
-    group.add(sp);
+    elevGroup.add(sp);
+    group.add(elevGroup);
+  }
+
+  // Per-floor accessible staircases flanking the elevator core
+  const corridorLayout = FLOOR_CORRIDOR_LAYOUTS[floorDef.code];
+  if (corridorLayout) {
+    const stairSides = [
+      { key: 'west', pos: corridorLayout.stairsWest },
+      { key: 'east', pos: corridorLayout.stairsEast },
+    ];
+    for (const side of stairSides) {
+      if (!side.pos) continue;
+      const [sx, sz] = side.pos;
+      const stairZ = Math.min(sz - 1.4, -21.2);
+      const stairGroup = new THREE.Group();
+      stairGroup.name = `staircase-${floorDef.code}-${side.key}`;
+      stairGroup.userData.isStaircase = true;
+
+      const landing = new THREE.Mesh(
+        new THREE.BoxGeometry(2.0, 0.08, 3.0),
+        new THREE.MeshStandardMaterial({ color: 0xe2e8f0, roughness: 0.75 })
+      );
+      landing.position.set(sx, 0.04, stairZ);
+      stairGroup.add(landing);
+
+      const stepCount = 6;
+      for (let s = 0; s < stepCount; s++) {
+        const step = new THREE.Mesh(
+          new THREE.BoxGeometry(1.5, 0.24, 0.36),
+          sharedMaterials.stairStep
+        );
+        step.position.set(sx, 0.14 + s * 0.24, stairZ - 0.15 - s * 0.38);
+        stairGroup.add(step);
+      }
+
+      const rail = new THREE.Mesh(new THREE.BoxGeometry(0.08, 0.08, 2.5), sharedMaterials.stairRail);
+      rail.position.set(sx + (side.key === 'west' ? -0.78 : 0.78), 1.35, stairZ - 1.1);
+      rail.rotation.x = 0.56;
+      stairGroup.add(rail);
+
+      const sp = createLabelSprite('🪜 Stairs', fullFloorName, '#475569');
+      sp.position.set(sx, 2.3, stairZ);
+      sp.scale.set(2.6, 0.82, 1);
+      labelSprites.push(sp);
+      stairGroup.add(sp);
+
+      group.add(stairGroup);
+    }
   }
 
   // 6. Individual Rooms from ENHANCED_ROOM_DB for this floor
@@ -411,7 +562,7 @@ export function buildFloorGroup(floorDef, floorGeom) {
     // Room floating label
     const accentHex = `#${baseColor.toString(16).padStart(6, '0')}`;
     const labelTitle = rm.room && rm.room !== '—' ? `${rm.room}` : rm.name;
-    const labelSub = rm.room && rm.room !== '—' && rm.name !== rm.room ? rm.name : `Floor ${rm.floor}`;
+    const labelSub = rm.room && rm.room !== '—' && rm.name !== rm.room ? rm.name : fullFloorName;
     const sprite = createLabelSprite(labelTitle, labelSub, accentHex);
     sprite.position.set(cx, 2.25, cz);
     if (rw < 4.5 || rd < 4.5) {

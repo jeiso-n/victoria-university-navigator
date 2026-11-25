@@ -7,7 +7,7 @@ import { SVG_GEOMETRY_CACHE } from '../data/svg-geometry-cache.js';
 
 // Walkable corridor spine definitions per floor derived directly from each floor's SVG wall layout.
 // Every corridor node is strictly inside open corridor space (outside room boxes & walls).
-const FLOOR_CORRIDOR_LAYOUTS = {
+export const FLOOR_CORRIDOR_LAYOUTS = {
   B2: {
     elev: [0.8, -16.2],
     stairsWest: [-6.0, -16.2],
