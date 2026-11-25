@@ -108,9 +108,7 @@ victoria-university-navigator/
 
 ## Project Credits
 
-- **Student:** Muganzi Joel (VU-CSF-2603-1860-DAY)
-- **Supervisor:** Mr. Sebastian Lutaalo
-- **Institution:** Victoria University, Kampala, Uganda
+- **Jeison_Muganzi**
 
 ## Notes
 
