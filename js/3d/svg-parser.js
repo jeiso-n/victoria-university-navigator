@@ -42,17 +42,52 @@ function applyMat(m, x, y) {
   return [m[0] * x + m[2] * y + m[4], m[1] * x + m[3] * y + m[5]];
 }
 
-function isArrowIconLine(n1, n2, elevBox) {
+const NORTH_CORE_CLEAR_ZONES = {
+  B2: [-7.2, -27.1, 7.2, -17.4],
+  B1: [-4.8, -27.1, 4.5, -20.5],
+  G:  [-7.4, -27.1, 3.3, -20.5],
+  1:  [-6.5, -27.1, 0.6, -20.5],
+  2:  [-5.0, -27.1, 3.6, -18.0],
+  3:  [-9.9, -27.1, 9.9, -20.5],
+  5:  [-8.6, -27.1, 8.6, -20.2],
+  6:  [-4.0, -27.1, 5.8, -21.8],
+  7:  [-4.6, -27.1, 6.2, -20.0],
+  8:  [-7.5, -27.1, 5.8, -21.0],
+  9:  [-5.8, -27.1, 6.3, -22.0],
+};
+
+function isNorthCoreCirculationObstacle(n1, n2, elevBox, floorCode) {
   const dx = Math.abs(n2[0] - n1[0]);
   const dz = Math.abs(n2[1] - n1[1]);
   const len = Math.hypot(dx, dz);
   const isDiag = dx > 0.25 && dz > 0.25 && Math.abs(dx - dz) < len * 0.85;
   if (len < 2.2 && isDiag) return true;
+  // Preserve exterior North perimeter wall along Z ≈ -27
+  if (Math.abs(n1[1] - (-27.0)) < 0.35 && Math.abs(n2[1] - (-27.0)) < 0.35) {
+    return false;
+  }
   if (len < 2.5 && elevBox) {
     const [ex1, ez1, ex2, ez2] = elevBox;
     const mx = (n1[0] + n2[0]) / 2;
     const mz = (n1[1] + n2[1]) / 2;
     if (ex1 - 5 <= mx && mx <= ex2 + 5 && ez1 - 2 <= mz && mz <= ez2 + 6 && len < 2.2) {
+      return true;
+    }
+  }
+  const zone = NORTH_CORE_CLEAR_ZONES[floorCode];
+  if (zone) {
+    const [zx1, zz1, zx2, zz2] = zone;
+    if (
+      n1[0] >= zx1 && n1[0] <= zx2 && n2[0] >= zx1 && n2[0] <= zx2 &&
+      n1[1] >= zz1 && n1[1] <= zz2 && n2[1] >= zz1 && n2[1] <= zz2
+    ) {
+      return true;
+    }
+  }
+  if (floorCode === '3' && Math.abs(n1[1] - (-21.0)) < 0.3 && Math.abs(n2[1] - (-21.0)) < 0.3) {
+    const minX = Math.min(n1[0], n2[0]);
+    const maxX = Math.max(n1[0], n2[0]);
+    if ((minX >= -10.05 && maxX <= -5.95) || (minX >= 5.95 && maxX <= 10.05)) {
       return true;
     }
   }
@@ -165,7 +200,7 @@ export function parseSvgXmlToNormalizedGeometry(svgXml, floorDef) {
     const n1 = normPt(p1);
     const n2 = normPt(p2);
     if (Math.hypot(n2[0] - n1[0], n2[1] - n1[1]) < 0.25) continue;
-    if (isArrowIconLine(n1, n2, elevBox)) continue;
+    if (isNorthCoreCirculationObstacle(n1, n2, elevBox, floorDef.code)) continue;
     const [a, b] = n1[0] < n2[0] || (n1[0] === n2[0] && n1[1] <= n2[1]) ? [n1, n2] : [n2, n1];
     const wkey = [a[0], a[1], b[0], b[1]].map(v => v.toFixed(1)).join(',');
     if (seenWalls.has(wkey)) continue;
@@ -225,10 +260,6 @@ export async function loadFloorGeometry(floorDef, basePath = '.') {
         [HALF_W, -HALF_D, HALF_W, HALF_D],
         [-HALF_W, HALF_D, HALF_W, HALF_D],
         [-HALF_W, -HALF_D, -HALF_W, HALF_D],
-        [-4.0, -25.0, 4.0, -25.0],
-        [-4.0, -21.0, 4.0, -21.0],
-        [-4.0, -25.0, -4.0, -21.0],
-        [4.0, -25.0, 4.0, -21.0],
       ],
       doors: [],
       elevator: [-4.0, -25.0, 4.0, -21.0],

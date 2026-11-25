@@ -65,19 +65,51 @@ def apply_mat(m, x, y):
     return (m[0] * x + m[2] * y + m[4], m[1] * x + m[3] * y + m[5])
 
 
-def is_arrow_icon_line(n1, n2, elev_box):
-    """Filter out tiny decorative arrow lines drawn inside 'Go up'/'Go Down' icons."""
+NORTH_CORE_CLEAR_ZONES = {
+    "B2": (-7.2, -27.1, 7.2, -17.4),
+    "B1": (-4.8, -27.1, 4.5, -20.5),
+    "G":  (-7.4, -27.1, 3.3, -20.5),
+    "1":  (-6.5, -27.1, 0.6, -20.5),
+    "2":  (-5.0, -27.1, 3.6, -18.0),
+    "3":  (-9.9, -27.1, 9.9, -20.5),
+    "5":  (-8.6, -27.1, 8.6, -20.2),
+    "6":  (-4.0, -27.1, 5.8, -21.8),
+    "7":  (-4.6, -27.1, 6.2, -20.0),
+    "8":  (-7.5, -27.1, 5.8, -21.0),
+    "9":  (-5.8, -27.1, 6.3, -22.0),
+}
+
+
+def is_north_core_circulation_obstacle(n1, n2, elev_box, floor_code):
+    """Filter out decorative arrow lines and obstructive core/staircase box walls around elevators."""
     dx = abs(n2[0] - n1[0])
     dz = abs(n2[1] - n1[1])
     length = math.hypot(dx, dz)
     is_diag = dx > 0.25 and dz > 0.25 and abs(dx - dz) < length * 0.85
     if length < 2.2 and is_diag:
         return True
+    # Preserve the exterior North perimeter wall along Z ≈ -27
+    if abs(n1[1] - (-27.0)) < 0.35 and abs(n2[1] - (-27.0)) < 0.35:
+        return False
     # Tiny vertical arrow stems near elevator
     if length < 2.5 and elev_box:
         ex1, ez1, ex2, ez2 = elev_box
         mx, mz = (n1[0] + n2[0]) / 2, (n1[1] + n2[1]) / 2
         if ex1 - 5.0 <= mx <= ex2 + 5.0 and ez1 - 2.0 <= mz <= ez2 + 6.0 and length < 2.2:
+            return True
+    zone = NORTH_CORE_CLEAR_ZONES.get(floor_code)
+    if zone:
+        zx1, zz1, zx2, zz2 = zone
+        if (
+            zx1 <= n1[0] <= zx2 and zx1 <= n2[0] <= zx2
+            and zz1 <= n1[1] <= zz2 and zz1 <= n2[1] <= zz2
+        ):
+            return True
+    # Floor 3 has short horizontal stair-bay closures [-10..-6, -21] and [6..10, -21]
+    if floor_code == "3" and abs(n1[1] - (-21.0)) < 0.3 and abs(n2[1] - (-21.0)) < 0.3:
+        minx = min(n1[0], n2[0])
+        maxx = max(n1[0], n2[0])
+        if (minx >= -10.05 and maxx <= -5.95) or (minx >= 5.95 and maxx <= 10.05):
             return True
     return False
 
@@ -173,7 +205,7 @@ def extract_floor(code, name, level_idx, svg_path):
         n1, n2 = norm_pt(p1), norm_pt(p2)
         if math.hypot(n2[0] - n1[0], n2[1] - n1[1]) < 0.25:
             continue
-        if is_arrow_icon_line(n1, n2, elev_box):
+        if is_north_core_circulation_obstacle(n1, n2, elev_box, code):
             continue
         # Canonical ordering for deduplication
         a, b = (n1, n2) if (n1[0], n1[1]) <= (n2[0], n2[1]) else (n2, n1)

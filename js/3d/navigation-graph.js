@@ -2,7 +2,7 @@
 // Uses actual SVG corridor geometry, doorway positions, elevator landings, and staircases
 // across all 12 levels (B2 -> 9), with wall-collision validation so edges do not cross solid walls.
 
-import { FLOOR_DEFINITIONS, ENHANCED_ROOM_DB } from '../data/building-data.js';
+import { FLOOR_DEFINITIONS, ENHANCED_ROOM_DB, formatFloorLabel } from '../data/building-data.js';
 import { SVG_GEOMETRY_CACHE } from '../data/svg-geometry-cache.js';
 
 // Walkable corridor spine definitions per floor derived directly from each floor's SVG wall layout.
@@ -64,7 +64,7 @@ const FLOOR_CORRIDOR_LAYOUTS = {
     stairsEast: [2.7, -19.2],
     nodes: [
       { id: 'c-nw', x: -8.0, z: -19.2, label: 'North-West lobby' },
-      { id: 'c-ne', x:  2.8, z: -14.0, label: 'Reception lobby' },
+      { id: 'c-ne', x: -1.8, z: -14.75, label: 'Reception lobby' },
       { id: 'c-c1', x: -2.0, z:  -9.0, label: 'Central lobby (near Trophy Case)' },
       { id: 'c-w1', x: -8.0, z:  -9.0, label: 'West corridor junction' },
       { id: 'c-w2', x: -8.0, z:   3.3, label: 'West corridor (near Marketing)' },
@@ -358,9 +358,10 @@ export class NavigationGraph {
       const swId = `stairs-west-${code}`;
       const seId = `stairs-east-${code}`;
 
-      this.addNode({ id: elevId, floor: code, levelIndex: def.levelIndex, x: layout.elev[0], z: layout.elev[1], type: 'elevator', label: `Floor ${code} Elevator` });
-      this.addNode({ id: swId, floor: code, levelIndex: def.levelIndex, x: layout.stairsWest[0], z: layout.stairsWest[1], type: 'stairs', label: `Floor ${code} West Staircase` });
-      this.addNode({ id: seId, floor: code, levelIndex: def.levelIndex, x: layout.stairsEast[0], z: layout.stairsEast[1], type: 'stairs', label: `Floor ${code} East Staircase` });
+      const floorDisplay = formatFloorLabel(code);
+      this.addNode({ id: elevId, floor: code, levelIndex: def.levelIndex, x: layout.elev[0], z: layout.elev[1], type: 'elevator', label: `${floorDisplay} Elevator` });
+      this.addNode({ id: swId, floor: code, levelIndex: def.levelIndex, x: layout.stairsWest[0], z: layout.stairsWest[1], type: 'stairs', label: `${floorDisplay} West Staircase` });
+      this.addNode({ id: seId, floor: code, levelIndex: def.levelIndex, x: layout.stairsEast[0], z: layout.stairsEast[1], type: 'stairs', label: `${floorDisplay} East Staircase` });
 
       const localToGlobal = (localId) => {
         if (localId === 'elev') return elevId;

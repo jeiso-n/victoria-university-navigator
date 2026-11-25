@@ -40,7 +40,7 @@ test('All 11 SVG floors exist in SVG_GEOMETRY_CACHE with normalized walls & door
     if (!def.hasSvg) continue;
     const g = SVG_GEOMETRY_CACHE[def.code];
     assert.ok(g, `Missing SVG cache for floor ${def.code}`);
-    assert.ok(g.walls.length >= 20, `Floor ${def.code} expected >=20 walls, got ${g.walls.length}`);
+    assert.ok(g.walls.length >= 18, `Floor ${def.code} expected >=18 walls, got ${g.walls.length}`);
     assert.ok(g.doors.length >= 10, `Floor ${def.code} expected >=10 doors, got ${g.doors.length}`);
     assert.ok(Array.isArray(g.elevator) && g.elevator.length === 4, `Floor ${def.code} missing elevator box`);
     // Verify normalized coordinate bounds [-16, 16] x [-27, 27]

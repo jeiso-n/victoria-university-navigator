@@ -1,7 +1,7 @@
 // A* Indoor Pathfinder & Turn-by-Turn Instruction Generator
 // Computes shortest accessible paths across all 12 levels using the NavigationGraph.
 
-import { FLOOR_MAP, findRoomByIdOrAlias } from '../data/building-data.js';
+import { formatFloorLabel, findRoomByIdOrAlias } from '../data/building-data.js';
 
 export class IndoorPathfinder {
   constructor(graph) {
@@ -153,7 +153,7 @@ export class IndoorPathfinder {
       stepNumber: stepNum++,
       floor: startRoom.floor,
       kind: 'start',
-      instruction: `Start at ${startRoom.name} (${FLOOR_MAP[startRoom.floor]?.name || `Floor ${startRoom.floor}`}).`,
+      instruction: `Start at ${startRoom.name} (${formatFloorLabel(startRoom.floor)}).`,
       node: path[0],
     });
 
@@ -173,7 +173,8 @@ export class IndoorPathfinder {
         }
         const exitNode = path[j];
         const endFloor = exitNode.floor;
-        const endFloorName = FLOOR_MAP[endFloor]?.name || `Floor ${endFloor}`;
+        const startFloorName = formatFloorLabel(startFloor);
+        const endFloorName = formatFloorLabel(endFloor);
         const direction = exitNode.levelIndex > fromNode.levelIndex ? 'up' : 'down';
 
         steps.push({
@@ -182,8 +183,8 @@ export class IndoorPathfinder {
           toFloor: endFloor,
           kind: transKind,
           instruction: transKind === 'elevator'
-            ? `Take the elevator ${direction} from Floor ${startFloor} to ${endFloorName}.`
-            : `Take the staircase ${direction} from Floor ${startFloor} to ${endFloorName}.`,
+            ? `Take the elevator ${direction} from ${startFloorName} to ${endFloorName}.`
+            : `Take the staircase ${direction} from ${startFloorName} to ${endFloorName}.`,
           node: fromNode,
           endNode: exitNode,
         });

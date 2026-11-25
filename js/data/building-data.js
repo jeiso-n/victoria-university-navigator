@@ -28,6 +28,30 @@ export const FLOOR_DEFINITIONS = [
 
 export const FLOOR_MAP = Object.fromEntries(FLOOR_DEFINITIONS.map(f => [f.code, f]));
 
+export const FLOOR_DISPLAY_LABELS = {
+  ALL: 'All Floors',
+  B2: 'Basement 2',
+  B1: 'Basement 1',
+  G: 'Ground Floor',
+  1: 'Floor 1',
+  2: 'Floor 2',
+  3: 'Floor 3',
+  4: 'Floor 4',
+  5: 'Floor 5',
+  6: 'Floor 6',
+  7: 'Floor 7',
+  8: 'Floor 8',
+  9: 'Floor 9',
+};
+
+export function formatFloorLabel(floorCode) {
+  if (!floorCode && floorCode !== 0) return '';
+  const key = String(floorCode).trim().toUpperCase();
+  if (FLOOR_DISPLAY_LABELS[key]) return FLOOR_DISPLAY_LABELS[key];
+  if (FLOOR_MAP[key]) return FLOOR_MAP[key].name;
+  return `Floor ${key}`;
+}
+
 // Helper to create a concise room entry
 // bounds: [xMin, zMin, xMax, zMax], door: [x, z]
 function r(id, room, name, floor, category, bounds, door, opts = {}) {
@@ -178,9 +202,9 @@ export const ENHANCED_ROOM_DB = [
       verificationNote: 'South Ground Floor main entrance foyer leading north toward Reception as described in directions.html.',
       directionsText: 'Main Victoria University entrance at Ground Floor, Market Plaza Tower.' }),
   r('reception', 'Reception', 'Reception', 'G', 'facility',
-    [4.0, -21.0, 10.0, -11.0], [4.0, -14.0],
+    [-1.8, -18.5, 3.6, -11.0], [-1.8, -14.75],
     { svgLabel: 'Reception', aliases: ['main reception', 'helpdesk', 'front desk'], image: 'images/reception.jpeg',
-      directionsText: 'From the main entrance, walk straight, reception on your right.' }),
+      directionsText: 'From the main entrance, walk straight ahead into the open lobby towards the Reception desk on your right.' }),
   r('art-gallery', 'G01', 'Art Gallery', 'G', 'social',
     [10.0, 5.0, 16.0, 27.0], [10.0, 14.37],
     { svgLabel: 'Art Gallery', aliases: ['g01', 'gallery'], image: 'images/art-gallery.jpeg',
