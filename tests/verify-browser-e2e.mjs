@@ -207,7 +207,7 @@ class CDPClient {
   close() {
     try {
       this.ws?.close();
-    } catch (_) {}
+    } catch (_) { }
   }
 }
 
@@ -337,9 +337,20 @@ async function run() {
       assertNoBrowserErrors('3D initialization');
     });
 
-    await test('3D view modes (isolated, cutaway, exploded, building, top-down, reset) and floor selector pills work cleanly', async () => {
+    await test('3D view modes (isolated, exploded, building, Map View, reset), Cutaway removal, and floor selector pills work cleanly', async () => {
       resetErrors();
-      const modes = ['isolated', 'cutaway', 'exploded', 'building'];
+      assert.equal(
+        await cdp.eval("document.querySelector('.vu3d-view-btn[data-view=\"cutaway\"]')"),
+        null,
+        'Cutaway button must be removed from toolbar'
+      );
+      assert.equal(
+        await cdp.eval("document.getElementById('vu3d-btn-topdown')?.textContent.trim()"),
+        'Map View',
+        'Top-Down button must be renamed to Map View'
+      );
+
+      const modes = ['isolated', 'exploded', 'building'];
       for (const m of modes) {
         await cdp.eval(`document.querySelector('.vu3d-view-btn[data-view="${m}"]').click()`);
         const activeMode = await cdp.eval("window.__VU_NAVIGATOR__.viewMode");
@@ -361,8 +372,19 @@ async function run() {
       assertNoBrowserErrors('3D view modes & floor pills');
     });
 
-    await test('3D Search selects Room 305 and generates Elevator + Stairs routes from Main Entrance with interactive steps', async () => {
+    await test('3D Search selects Room 305, removes Vertical Travel selector & distance suffixes, and generates Elevator + Stairs routes', async () => {
       resetErrors();
+      assert.equal(
+        await cdp.eval("document.querySelector('.vu3d-route-mode-row')"),
+        null,
+        'Vertical Travel selector section must be removed from sidebar'
+      );
+      assert.equal(
+        await cdp.eval("document.querySelectorAll('.vu3d-vmode').length"),
+        0,
+        'Vertical Travel mode buttons must not exist'
+      );
+
       await cdp.eval(`(() => {
         const input = document.getElementById('vu3d-search-input');
         input.value = '305';
@@ -381,9 +403,13 @@ async function run() {
 
       const elevRouteInfo = await cdp.eval(`(() => {
         const nav = window.__VU_NAVIGATOR__;
+        const stepsTexts = [...document.querySelectorAll('#vu3d-steps-list .vu3d-step-item')].map(el => el.innerText);
+        const statsText = document.getElementById('vu3d-route-stats')?.innerText || '';
         return {
           mode: nav.currentRoute.mode,
-          stepCount: document.querySelectorAll('#vu3d-steps-list .vu3d-step-item').length,
+          stepCount: stepsTexts.length,
+          stepsTexts,
+          statsText,
           bottomVisible: !document.getElementById('vu3d-bottom-bar').hidden,
           routeChildren: nav.sceneManager.routeRenderer.routeGroup.children.length,
           floorsVisited: nav.currentRoute.floorsVisited,
@@ -394,9 +420,11 @@ async function run() {
       assert.equal(elevRouteInfo.bottomVisible, true);
       assert.ok(elevRouteInfo.routeChildren > 0, 'Expected 3D route meshes rendered in routeGroup');
       assert.deepEqual(elevRouteInfo.floorsVisited, ['G', '1', '2', '3']);
+      assert.ok(!/\(\s*~?\d+\s*m\s*\)/i.test(elevRouteInfo.stepsTexts.join(' ')), `Distance suffix found in steps: ${elevRouteInfo.stepsTexts.join(' | ')}`);
+      assert.ok(!/\d+\s*m\b/i.test(elevRouteInfo.statsText), `Distance measurement found in route stats: ${elevRouteInfo.statsText}`);
 
-      // Switch vertical mode to stairs
-      await cdp.eval("document.querySelector('.vu3d-vmode[data-vmode=\"stairs\"]').click()");
+      // Verify stairs routing via controller API
+      await cdp.eval("window.__VU_NAVIGATOR__.setRouteMode('stairs')");
       const stairsMode = await cdp.eval("window.__VU_NAVIGATOR__.currentRoute?.mode");
       assert.equal(stairsMode, 'stairs');
 
@@ -430,24 +458,52 @@ async function run() {
       ]);
       assert.ok(!/^FL\s*\d+$|^FL\s*G$|^B[12]$|^G$/.test(labelAudit.stepPill), `Step floor pill used abbreviation: ${labelAudit.stepPill}`);
 
-      // 2. Check Ground Floor Reception coordinates & Elevator purple cores across all 12 levels
+      // 2. Check Ground Floor Reception coordinates, Dual-Elevator cores (2 elevators per floor), and attached Right-UP / Left-DOWN staircases across all 12 levels
       const archAudit = await cdp.eval(`(() => {
         const nav = window.__VU_NAVIGATOR__;
         const sm = nav.sceneManager;
         const recMesh = sm.building.roomMeshById.get('reception');
-        const elevCount = [...sm.building.floors.values()].filter(f => {
-          let found = false;
-          f.group.traverse(o => { if (o.userData?.isElevatorCore) found = true; });
-          return found;
-        }).length;
+        let dualCoreFloors = 0;
+        let attachedStairFloors = 0;
+        for (const f of sm.building.floors.values()) {
+          let units = 0;
+          let rightUp = false;
+          let leftDown = false;
+          f.group.traverse(o => {
+            if (o.userData?.isElevatorUnit) units++;
+            if (o.userData?.isStaircase && o.userData?.connectedToCore) {
+              if (o.userData.stairSide === 'right' && o.userData.stairDirection === 'up') rightUp = true;
+              if (o.userData.stairSide === 'left' && o.userData.stairDirection === 'down') leftDown = true;
+            }
+          });
+          if (units === 2) dualCoreFloors++;
+          if (rightUp && leftDown) attachedStairFloors++;
+        }
         return {
           recX: recMesh ? recMesh.position.x : null,
           recZ: recMesh ? recMesh.position.z : null,
-          elevCount,
+          dualCoreFloors,
+          attachedStairFloors,
         };
       })()`);
       assert.ok(archAudit.recX > 0.5 && archAudit.recX < 1.5 && archAudit.recZ < -12, `Unexpected reception position: ${JSON.stringify(archAudit)}`);
-      assert.equal(archAudit.elevCount, 12, 'Expected purple elevator core on all 12 levels');
+      assert.equal(archAudit.dualCoreFloors, 12, 'Expected 2 side-by-side elevator units on all 12 levels');
+      assert.equal(archAudit.attachedStairFloors, 12, 'Expected attached Right-UP and Left-DOWN staircases on all 12 levels');
+
+      // Capture close-up screenshot of Floor 6 dual-elevator core & attached staircases (matching pic3.png angle)
+      await cdp.eval(`(() => {
+        const nav = window.__VU_NAVIGATOR__;
+        document.querySelector('.vu3d-view-btn[data-view="isolated"]').click();
+        document.querySelector('.vu3d-floor-pill[data-floor="6"]').click();
+        const y = nav.sceneManager.building.getFloorY('6');
+        nav.sceneManager.cameraController.transitionTo(
+          { x: 0, y: y + 4.2, z: -14.2 },
+          { x: 0, y: y + 1.6, z: -23.5 },
+          0.1,
+          true
+        );
+      })()`);
+      await snap('verify_floor6_elevators_stairs.png');
 
       // Switch explicitly to Isolate Floor mode and test Ground Floor + Basements B2 & B1 + all 12 levels
       await cdp.eval("document.querySelector('.vu3d-view-btn[data-view=\"isolated\"]').click()");
@@ -541,10 +597,36 @@ async function run() {
       assert.equal(await cdp.eval("localStorage.getItem('vu_theme_v1')"), 'light');
       assert.equal(await cdp.eval("document.getElementById('vu3d-theme-toggle').textContent.trim()"), 'Dark');
 
-      // Exit back to 2D MAP
+      // Exit back to 2D MAP and verify Dark Mode contrast on directions.html dropdowns & floor headings (ui1.png check)
       await cdp.eval("document.getElementById('btn-mode-2d').click()");
       const stillOpen = await cdp.eval("document.getElementById('vu-3d-overlay').classList.contains('open')");
       assert.equal(stillOpen, false);
+
+      await cdp.navigate(`${baseUrl}/directions.html`);
+      await cdp.waitFor("document.getElementById('vu-theme-toggle') && document.getElementById('roomAZSelect')");
+      await cdp.eval("document.getElementById('vu-theme-toggle').click()");
+      await new Promise(r => setTimeout(r, 300));
+      const dark2DStyles = await cdp.eval(`(() => {
+        const az = getComputedStyle(document.getElementById('roomAZSelect'));
+        const num = getComputedStyle(document.getElementById('roomSelect'));
+        const fh = getComputedStyle(document.querySelector('.floor-heading'));
+        const activeTab = getComputedStyle(document.querySelector('.site-nav a.active'));
+        return {
+          azBg: az.backgroundColor,
+          azColor: az.color,
+          numBg: num.backgroundColor,
+          fhBg: fh.backgroundColor,
+          fhColor: fh.color,
+          tabBg: activeTab.backgroundColor,
+          tabColor: activeTab.color,
+        };
+      })()`);
+      assert.notEqual(dark2DStyles.azBg, 'rgb(255, 255, 255)', `roomAZSelect must not have white background in dark mode: ${JSON.stringify(dark2DStyles)}`);
+      assert.notEqual(dark2DStyles.numBg, 'rgb(255, 255, 255)', `roomSelect must not have white background in dark mode: ${JSON.stringify(dark2DStyles)}`);
+      assert.notEqual(dark2DStyles.fhBg, 'rgb(255, 255, 255)', `floor-heading must not have white background in dark mode: ${JSON.stringify(dark2DStyles)}`);
+      await snap('verify_dark_mode_2d_directions.png');
+      // Switch back to Light Mode before mobile tests
+      await cdp.eval("document.getElementById('vu-theme-toggle').click()");
       assertNoBrowserErrors('Section 8 full verification');
     });
 
@@ -628,11 +710,11 @@ async function run() {
     if (chromeProc) {
       try {
         chromeProc.kill();
-      } catch (_) {}
+      } catch (_) { }
     }
     try {
       fs.rmSync(profileDir, { recursive: true, force: true });
-    } catch (_) {}
+    } catch (_) { }
     await new Promise(resolve => server.close(resolve));
   }
 }

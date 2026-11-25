@@ -8,39 +8,62 @@
 /* --- VU Institutional Design Tokens --- */
 :root {
   /* Official Victoria University Brand Colors */
-  --vu-navy: #1b365d;          /* Primary academic brand navy */
-  --vu-navy-dark: #0f2242;     /* Deeper navy for header borders/emphasis */
-  --vu-navy-deep: #0a1f3d;     /* Authoritative dark navy for footer */
-  --vu-blue: #00a0df;          /* Official VU vibrant sky/azure blue */
-  --vu-blue-hover: #0080b3;    /* Richer azure for hover states */
-  --vu-blue-dark: #006892;     /* Dark azure for active states */
-  --vu-blue-light: #f0f9ff;    /* Soft brand tint for active items & hover */
-  --vu-blue-border: #bae6fd;   /* Subtle border for active items */
+  --vu-navy: #1b365d;
+  /* Primary academic brand navy */
+  --vu-navy-dark: #0f2242;
+  /* Deeper navy for header borders/emphasis */
+  --vu-navy-deep: #0a1f3d;
+  /* Authoritative dark navy for footer */
+  --vu-blue: #00a0df;
+  /* Official VU vibrant sky/azure blue */
+  --vu-blue-hover: #0080b3;
+  /* Richer azure for hover states */
+  --vu-blue-dark: #006892;
+  /* Dark azure for active states */
+  --vu-blue-light: #f0f9ff;
+  /* Soft brand tint for active items & hover */
+  --vu-blue-border: #bae6fd;
+  /* Subtle border for active items */
 
   /* Secondary University Accents */
-  --vu-orange: #ff671f;        /* Warm VU orange accent */
-  --vu-red: #c8102e;           /* Victoria University shield crimson */
-  --vu-red-light: #fef2f2;     /* Subtle red badge background */
-  --vu-green: #059669;         /* Success / ground floor badge */
+  --vu-orange: #ff671f;
+  /* Warm VU orange accent */
+  --vu-red: #c8102e;
+  /* Victoria University shield crimson */
+  --vu-red-light: #fef2f2;
+  /* Subtle red badge background */
+  --vu-green: #059669;
+  /* Success / ground floor badge */
   --vu-green-light: #ecfdf5;
 
   /* Surfaces & Canvas (Clean, accessible, professional) */
-  --bg-page: #f8fafc;          /* High-clarity light slate background */
-  --bg-surface: #ffffff;       /* Pure white cards and sections */
-  --bg-subtle: #f1f5f9;        /* Subtle slate for secondary surfaces */
+  --bg-page: #f8fafc;
+  /* High-clarity light slate background */
+  --bg-surface: #ffffff;
+  /* Pure white cards and sections */
+  --bg-subtle: #f1f5f9;
+  /* Subtle slate for secondary surfaces */
   --bg-card: #ffffff;
-  --bg-dark: #0a1f3d;          /* Maintained for backwards compatibility */
+  --bg-dark: #0a1f3d;
+  /* Maintained for backwards compatibility */
 
   /* Typography & Text */
-  --text-primary: #0f172a;     /* Deep slate / navy charcoal (WCAG AAA) */
-  --text-secondary: #334155;   /* Slate 700 for descriptions */
-  --text-muted: #64748b;       /* Slate 500 for captions & labels */
-  --text-light: #94a3b8;       /* Slate 400 for subtle hints */
-  --text-on-dark: #ffffff;     /* White on navy elements */
+  --text-primary: #0f172a;
+  /* Deep slate / navy charcoal (WCAG AAA) */
+  --text-secondary: #334155;
+  /* Slate 700 for descriptions */
+  --text-muted: #64748b;
+  /* Slate 500 for captions & labels */
+  --text-light: #94a3b8;
+  /* Slate 400 for subtle hints */
+  --text-on-dark: #ffffff;
+  /* White on navy elements */
 
   /* Borders & Dividers */
-  --border: #e2e8f0;           /* Clean, subtle slate border */
-  --border-focus: #00a0df;     /* Brand blue focus outline */
+  --border: #e2e8f0;
+  /* Clean, subtle slate border */
+  --border-focus: #00a0df;
+  /* Brand blue focus outline */
   --border-accent: rgba(0, 160, 223, 0.35);
 
   /* Radius */
@@ -108,7 +131,8 @@ header {
 
 /* ── HAMBURGER BUTTON ── */
 .nav-hamburger {
-  display: none; /* hidden on desktop */
+  display: none;
+  /* hidden on desktop */
   align-items: center;
   justify-content: center;
   width: 44px;
@@ -208,7 +232,7 @@ header {
 .nav-drawer-subtitle {
   font-size: 0.65rem;
   font-weight: 600;
-  color: rgba(255,255,255,0.65);
+  color: rgba(255, 255, 255, 0.65);
   text-transform: uppercase;
   letter-spacing: 0.06em;
 }
@@ -219,8 +243,8 @@ header {
   justify-content: center;
   width: 36px;
   height: 36px;
-  background: rgba(255,255,255,0.12);
-  border: 1px solid rgba(255,255,255,0.25);
+  background: rgba(255, 255, 255, 0.12);
+  border: 1px solid rgba(255, 255, 255, 0.25);
   border-radius: var(--radius-sm);
   cursor: pointer;
   color: #ffffff;
@@ -231,7 +255,7 @@ header {
 }
 
 .nav-drawer-close:hover {
-  background: rgba(255,255,255,0.22);
+  background: rgba(255, 255, 255, 0.22);
 }
 
 /* Drawer nav links */
@@ -597,7 +621,8 @@ body.home-page {
   box-shadow: var(--shadow-md);
   margin-bottom: 2rem;
   position: relative;
-  overflow: visible; /* Dropdown must overflow cleanly */
+  overflow: visible;
+  /* Dropdown must overflow cleanly */
   z-index: 50;
 }
 
@@ -889,7 +914,7 @@ body.home-page {
    ========================================================================== */
 .floor-selector {
   background-image: linear-gradient(rgba(10, 31, 61, 0.72), rgba(10, 31, 61, 0.72)),
-                    url('../images/backgroundimage1.jpeg');
+    url('../images/backgroundimage1.jpeg');
   background-size: cover;
   background-position: center;
   background-repeat: no-repeat;
@@ -1287,9 +1312,20 @@ body.home-page {
 }
 
 @keyframes pulse-card {
-  0%   { box-shadow: 0 0 0 0 rgba(0, 160, 223, 0.7); background: #e0f4ff; }
-  60%  { box-shadow: 0 0 0 10px rgba(0, 160, 223, 0); background: var(--vu-blue-light); }
-  100% { box-shadow: 0 0 0 3px rgba(0, 160, 223, 0.35); background: var(--vu-blue-light); }
+  0% {
+    box-shadow: 0 0 0 0 rgba(0, 160, 223, 0.7);
+    background: #e0f4ff;
+  }
+
+  60% {
+    box-shadow: 0 0 0 10px rgba(0, 160, 223, 0);
+    background: var(--vu-blue-light);
+  }
+
+  100% {
+    box-shadow: 0 0 0 3px rgba(0, 160, 223, 0.35);
+    background: var(--vu-blue-light);
+  }
 }
 
 /* Floor Map Link – bottom-right of each direction card */
@@ -1437,16 +1473,41 @@ body.home-page {
 /* light purple = rgba(199,125,255,0.4) → Elevator */
 /* green        = rgba(0,255,16,0.4)   → Toilets   */
 /* light blue   = rgba(0,201,167,0.4)  → All rooms */
-.legend-dot.elevator { background: rgba(199, 125, 255, 0.75); border: 1px solid #b06ee0; }
-.legend-dot.toilets  { background: rgba(0, 210, 30, 0.75);  border: 1px solid #00a010; }
-.legend-dot.rooms    { background: rgba(0, 190, 160, 0.75); border: 1px solid #009b84; }
+.legend-dot.elevator {
+  background: rgba(199, 125, 255, 0.75);
+  border: 1px solid #b06ee0;
+}
+
+.legend-dot.toilets {
+  background: rgba(0, 210, 30, 0.75);
+  border: 1px solid #00a010;
+}
+
+.legend-dot.rooms {
+  background: rgba(0, 190, 160, 0.75);
+  border: 1px solid #009b84;
+}
 
 /* Keep old classes for any pages still using them (deprecated) */
-.legend-dot.office  { background: #1b365d; }
-.legend-dot.study   { background: #d97706; }
-.legend-dot.lab     { background: #059669; }
-.legend-dot.social  { background: #00a0df; }
-.legend-dot.utility { background: #6b21a8; }
+.legend-dot.office {
+  background: #1b365d;
+}
+
+.legend-dot.study {
+  background: #d97706;
+}
+
+.legend-dot.lab {
+  background: #059669;
+}
+
+.legend-dot.social {
+  background: #00a0df;
+}
+
+.legend-dot.utility {
+  background: #6b21a8;
+}
 
 /* SVG Map Coming Soon / Under Construction Banner */
 .map-coming-soon {
@@ -1688,7 +1749,7 @@ body.home-page {
 
 .info-card,
 .facility-card,
-.project-values > div,
+.project-values>div,
 .content-panel,
 .tips-panel {
   background: #ffffff;
@@ -1705,7 +1766,7 @@ body.home-page {
 
 .info-card:hover,
 .facility-card:hover,
-.project-values > div:hover {
+.project-values>div:hover {
   transform: translateY(-4px);
   border-color: var(--vu-blue-border);
   box-shadow: var(--shadow-md);
@@ -1769,8 +1830,8 @@ body.home-page {
 }
 
 .guide-office-card,
-.guide-list > a,
-.guide-list > div {
+.guide-list>a,
+.guide-list>div {
   display: flex;
   align-items: center;
   gap: 1rem;
@@ -1786,7 +1847,7 @@ body.home-page {
 }
 
 .guide-office-card:hover,
-.guide-list > a:hover {
+.guide-list>a:hover {
   background: #e0f0fc;
   border-color: var(--vu-blue);
   transform: translateY(-2px);
@@ -1808,7 +1869,7 @@ body.home-page {
 }
 
 .guide-office-card:hover .guide-office-icon,
-.guide-list > a:hover .guide-office-icon {
+.guide-list>a:hover .guide-office-icon {
   border-color: var(--vu-blue);
   transform: scale(1.08);
 }
@@ -1831,7 +1892,7 @@ body.home-page {
 }
 
 .guide-office-card:hover .guide-office-title,
-.guide-list > a:hover strong {
+.guide-list>a:hover strong {
   color: var(--vu-blue);
 }
 
@@ -1852,7 +1913,7 @@ body.home-page {
 }
 
 .guide-office-card:hover .guide-office-arrow,
-.guide-list > a:hover .guide-office-arrow {
+.guide-list>a:hover .guide-office-arrow {
   opacity: 1;
   transform: translateX(4px);
 }
@@ -1873,11 +1934,11 @@ body.home-page {
   padding-left: 1.25rem;
 }
 
-.tips-panel li + li {
+.tips-panel li+li {
   margin-top: 0.6rem;
 }
 
-.facility-card > span {
+.facility-card>span {
   font-size: 2rem;
   display: block;
   margin-bottom: 0.85rem;
@@ -1912,7 +1973,7 @@ body.home-page {
   margin-top: 1.25rem;
 }
 
-.project-values > div {
+.project-values>div {
   padding: 1.75rem;
 }
 
@@ -2171,6 +2232,7 @@ footer:not(.site-footer) {
 }
 
 @media (max-width: 768px) {
+
   /* ── Mobile header: compact single row ── */
   .header-inner {
     flex-direction: row;
@@ -2321,7 +2383,7 @@ footer:not(.site-footer) {
   font-weight: 700;
   line-height: 1;
   cursor: pointer;
-  box-shadow: 0 4px 16px rgba(0,0,0,0.25);
+  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.25);
   display: flex;
   align-items: center;
   justify-content: center;
@@ -2700,8 +2762,13 @@ body.vu-3d-open {
   flex-shrink: 0;
 }
 
-.vu3d-res-floor.basement { background: #475569; }
-.vu3d-res-floor.ground { background: var(--vu-green); }
+.vu3d-res-floor.basement {
+  background: #475569;
+}
+
+.vu3d-res-floor.ground {
+  background: var(--vu-green);
+}
 
 .vu3d-res-meta {
   flex: 1;
@@ -2832,9 +2899,20 @@ body.vu-3d-open {
   white-space: nowrap;
 }
 
-.vu3d-badge.verified { background: #ecfdf5; color: #059669; }
-.vu3d-badge.est { background: #fffbeb; color: #b45309; }
-.vu3d-badge.warn { background: #fef2f2; color: #dc2626; }
+.vu3d-badge.verified {
+  background: #ecfdf5;
+  color: #059669;
+}
+
+.vu3d-badge.est {
+  background: #fffbeb;
+  color: #b45309;
+}
+
+.vu3d-badge.warn {
+  background: #fef2f2;
+  color: #dc2626;
+}
 
 .vu3d-room-dir {
   font-size: 0.82rem;
@@ -3023,7 +3101,9 @@ body.vu-3d-open {
 }
 
 @keyframes vu3d-spin {
-  to { transform: rotate(360deg); }
+  to {
+    transform: rotate(360deg);
+  }
 }
 
 .vu3d-hover-tooltip {
@@ -3426,25 +3506,133 @@ body.dark-mode header {
 [data-theme="dark"] .building-info,
 [data-theme="dark"] .svg-map-container,
 [data-theme="dark"] .search-results,
+[data-theme="dark"] .header-search-wrapper .search-results,
 [data-theme="dark"] .nav-drawer,
 [data-theme="dark"] .room-card,
+[data-theme="dark"] .room-table,
+[data-theme="dark"] .page-hero,
+[data-theme="dark"] .map-coming-soon,
+[data-theme="dark"] .floor-plan-toggle,
 [data-theme="dark"] .guide-office-card,
-[data-theme="dark"] .guide-list > a,
-[data-theme="dark"] .guide-list > div {
+[data-theme="dark"] .guide-list>a,
+[data-theme="dark"] .guide-list>div {
   background: #111c33;
-  border-color: #253553;
+  border-color: #283a5e;
   color: #f1f5f9;
 }
 
+[data-theme="dark"] .floor-heading {
+  background: #162440;
+  border-color: #2e4268;
+  border-left-color: #38bdf8;
+  color: #f8fafc;
+}
+
+[data-theme="dark"] .select-container {
+  background: #162440;
+  border-color: #2e4268;
+}
+
+[data-theme="dark"] .select-container label {
+  color: #f1f5f9;
+}
+
+[data-theme="dark"] #roomSelect,
+[data-theme="dark"] #roomAZSelect,
+[data-theme="dark"] select,
+[data-theme="dark"] .vu3d-route-setup select {
+  background-color: #1a2b4c !important;
+  border-color: #38507e !important;
+  color: #f8fafc !important;
+}
+
+[data-theme="dark"] #roomSelect option,
+[data-theme="dark"] #roomAZSelect option,
+[data-theme="dark"] select option,
+[data-theme="dark"] select optgroup {
+  background-color: #111c33;
+  color: #f8fafc;
+}
+
 [data-theme="dark"] .floor-btn,
+[data-theme="dark"] .floor-btn.basement,
+[data-theme="dark"] .floor-btn.ground,
 [data-theme="dark"] .toggle-btn,
+[data-theme="dark"] .floor-subnav a,
+[data-theme="dark"] .back-link a,
+[data-theme="dark"] .directionav,
+[data-theme="dark"] .index-list a,
+[data-theme="dark"] .floor-index a,
+[data-theme="dark"] .guide-office-icon,
 [data-theme="dark"] #globalSearch,
 [data-theme="dark"] .header-search-wrapper #globalSearch,
-[data-theme="dark"] select,
 [data-theme="dark"] input[type="search"] {
+  background-color: #182644 !important;
+  border-color: #334b78 !important;
+  color: #f1f5f9 !important;
+}
+
+[data-theme="dark"] #globalSearch:hover,
+[data-theme="dark"] #globalSearch:focus,
+[data-theme="dark"] .header-search-wrapper #globalSearch:hover,
+[data-theme="dark"] .header-search-wrapper #globalSearch:focus,
+[data-theme="dark"] #vu3d-search-input:focus {
+  background-color: #1e3056 !important;
+  border-color: #38bdf8 !important;
+  color: #ffffff !important;
+}
+
+[data-theme="dark"] #globalSearch::placeholder,
+[data-theme="dark"] .header-search-wrapper #globalSearch::placeholder,
+[data-theme="dark"] #vu3d-search-input::placeholder {
+  color: #94a3b8;
+}
+
+[data-theme="dark"] .floor-btn .floor-number {
+  color: #f8fafc;
+}
+
+[data-theme="dark"] .floor-btn.ground .floor-number,
+[data-theme="dark"] .floor-btn.ground .floor-tag {
+  color: #38bdf8;
+}
+
+[data-theme="dark"] .floor-btn .floor-tag {
+  color: #cbd5e1;
+}
+
+[data-theme="dark"] .site-nav a.active,
+[data-theme="dark"] .floor-nav a.active,
+[data-theme="dark"] nav.floor-nav:not(.site-nav) a.active,
+[data-theme="dark"] .floor-subnav a.active,
+[data-theme="dark"] .vu-mode-btn.active,
+[data-theme="dark"] .toggle-btn.active,
+[data-theme="dark"] .card-tag span:first-child,
+[data-theme="dark"] .search-result-floor,
+[data-theme="dark"] .nav-drawer-header,
+[data-theme="dark"] #back-to-top {
+  background: #0284c7 !important;
+  color: #ffffff !important;
+  border-color: #38bdf8 !important;
+}
+
+[data-theme="dark"] .card-tag span:last-child {
   background: #182644;
-  border-color: #2e4268;
-  color: #f1f5f9;
+  border-color: #334b78;
+  color: #e2e8f0;
+}
+
+[data-theme="dark"] .direction-card {
+  border-left-color: #38bdf8;
+}
+
+[data-theme="dark"] .guide-office-card:hover,
+[data-theme="dark"] .guide-list > a:hover,
+[data-theme="dark"] .index-list a:hover,
+[data-theme="dark"] .floor-index a:hover {
+  background-color: #1e3056 !important;
+  border-color: #38bdf8 !important;
+  color: #38bdf8 !important;
 }
 
 [data-theme="dark"] .room-table th {
@@ -3590,10 +3778,12 @@ body.dark-mode header {
   background: rgba(16, 185, 129, 0.18);
   color: #6ee7b7;
 }
+
 [data-theme="dark"] .vu3d-badge.est {
   background: rgba(245, 158, 11, 0.18);
   color: #fcd34d;
 }
+
 [data-theme="dark"] .vu3d-badge.warn {
   background: rgba(239, 68, 68, 0.2);
   color: #fca5a5;

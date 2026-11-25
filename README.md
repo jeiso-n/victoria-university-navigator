@@ -7,13 +7,12 @@ A responsive, static 2D + 3D indoor campus-navigation website for **Victoria Uni
 ## Key Features
 
 - **Unified 2D / 3D Mode Toggle:** Switch anytime between `2D MAP` and `3D MAP` from the site header, `directions.html` room cards (`🧭 Navigate in 3D`), floor pages (`Explore in 3D`), or homepage CTA while keeping your selected floor, room, and search query in sync.
-- **Procedural 12-Storey Three.js Building (`B2`–`9`):** Generates floor slabs, exterior curtain walls, doorway-split interior partitions (`#06c` SVG door openings), room footprints, elevator shaft, dual staircases, Ground Floor entrance canopy, Floor 4 renovation zone, and room labels directly from normalized SVG coordinates (`[-16, +16]m × [-27, +27]m`).
+- **Procedural 12-Storey Three.js Building (`B2`–`9`):** Generates floor slabs, exterior curtain walls, doorway-split interior partitions (`#06c` SVG door openings), room footprints, a central dual-elevator core (two side-by-side purple elevators) with physically attached wrap-around directional staircases (`Right = UP`, `Left = DOWN`), Ground Floor entrance canopy, Floor 4 renovation zone, and room labels directly from normalized SVG coordinates (`[-16, +16]m × [-27, +27]m`).
 - **Multistorey Exploration Views:**
   - `Full Building` (entire 12-level Market Plaza Tower)
-  - `Isolate Floor` (focus single floor `B2`–`9`)
-  - `Cutaway` (selected floor highlighted with translucent upper/lower structure)
+  - `Isolate Floor` (focus single floor `Basement 2`–`Floor 9`)
   - `Exploded` (vertically expanded stack showing floor relationships)
-  - `Top-Down` / `Perspective` camera views + smooth fly-to transitions
+  - `Map View` / `Perspective` camera views + smooth fly-to transitions
 - **Shared Room Search & Verification Metadata:** Searches 129 mapped rooms, laboratories, offices, and facilities across `ROOM_DB` / `ENHANCED_ROOM_DB` with aliases and typo tolerance, displaying SVG verification badges (`SVG Verified`, `Location Estimated / Verify On-Site`, `Under Renovation`).
 - **Real Multi-Floor Indoor Pathfinding (A\*):**
   - Calculates walkable corridor routes avoiding solid walls, attaching doorways to walkable floor spines.
@@ -27,7 +26,7 @@ A responsive, static 2D + 3D indoor campus-navigation website for **Victoria Uni
 - **Pan:** Right-click + drag (or 2-finger drag)
 - **Zoom:** Mouse wheel / pinch
 - **Select Room:** Click/tap any room footprint or choose from the search dropdown
-- **Floor Navigation:** Click any floor pill (`ALL`, `9` down to `B2`) on the right rail or switch view modes (`Full Building`, `Isolate Floor`, `Cutaway`, `Exploded`, `Top-Down`, `Reset View`)
+- **Floor Navigation:** Click any floor pill (`All Floors`, `Floor 9` down to `Basement 2`) on the right rail or switch view modes (`Full Building`, `Isolate Floor`, `Exploded`, `Map View`, `Reset View`)
 
 ## Getting Started
 

@@ -218,4 +218,67 @@ test('Full human-readable floor labels expand all 12 levels cleanly with no abbr
   assert.ok(downStairs && downStairs.steps.some(s => s.instruction.includes('Basement 2')));
 });
 
+test('Dual elevators exist on all 12 levels and staircases are strictly directional (Right = UP, Left = DOWN)', () => {
+  for (const def of FLOOR_DEFINITIONS) {
+    assert.ok(graph.nodes.has(`elev-left-${def.code}`), `Missing left elevator node on ${def.code}`);
+    assert.ok(graph.nodes.has(`elev-right-${def.code}`), `Missing right elevator node on ${def.code}`);
+    const upNode = graph.nodes.get(`stairs-east-${def.code}`);
+    const downNode = graph.nodes.get(`stairs-west-${def.code}`);
+    assert.equal(upNode.stairSide, 'right');
+    assert.equal(upNode.stairDirection, 'up');
+    assert.equal(downNode.stairSide, 'left');
+    assert.equal(downNode.stairDirection, 'down');
+
+    const eastEdges = (graph.adj.get(upNode.id) || []).filter(e => e.kind === 'stairs');
+    const westEdges = (graph.adj.get(downNode.id) || []).filter(e => e.kind === 'stairs');
+    if (def.levelIndex < 9) {
+      assert.equal(eastEdges.length, 1, `Expected 1 ascending stair edge from ${def.code}`);
+      assert.equal(eastEdges[0].direction, 'up');
+      assert.equal(eastEdges[0].side, 'right');
+    } else {
+      assert.equal(eastEdges.length, 0, 'Floor 9 must not have an ascending stair edge above it');
+    }
+    if (def.levelIndex > -2) {
+      assert.equal(westEdges.length, 1, `Expected 1 descending stair edge from ${def.code}`);
+      assert.equal(westEdges[0].direction, 'down');
+      assert.equal(westEdges[0].side, 'left');
+    } else {
+      assert.equal(westEdges.length, 0, 'Basement 2 must not have a descending stair edge below it');
+    }
+  }
+
+  const upRoute = pathfinder.findRoute('main-entrance', 'room-305', { mode: 'stairs' });
+  assert.ok(upRoute);
+  const upStairEdges = upRoute.edges.filter(e => e.kind === 'stairs');
+  assert.ok(upStairEdges.length === 3 && upStairEdges.every(e => e.direction === 'up' && e.side === 'right'));
+  assert.ok(upRoute.steps.some(s => s.instruction.includes('right-hand staircase up')));
+
+  const downRoute = pathfinder.findRoute('room-305', 'main-entrance', { mode: 'stairs' });
+  assert.ok(downRoute);
+  const downStairEdges = downRoute.edges.filter(e => e.kind === 'stairs');
+  assert.ok(downStairEdges.length === 3 && downStairEdges.every(e => e.direction === 'down' && e.side === 'left'));
+  assert.ok(downRoute.steps.some(s => s.instruction.includes('left-hand staircase down')));
+});
+
+test('Navigation instructions contain zero distance measurements', () => {
+  const samplePairs = [
+    ['main-entrance', 'room-308'],
+    ['main-entrance', 'room-305'],
+    ['dance', 'room-902'],
+    ['room-902', 'registration'],
+  ];
+  for (const [a, b] of samplePairs) {
+    for (const mode of ['elevator', 'stairs']) {
+      const r = pathfinder.findRoute(a, b, { mode });
+      assert.ok(r);
+      for (const step of r.steps) {
+        assert.ok(
+          !/\(\s*~?\d+(?:\.\d+)?\s*m\s*\)/i.test(step.instruction),
+          `Distance suffix found in instruction: "${step.instruction}"`
+        );
+      }
+    }
+  }
+});
+
 console.log(`\nSummary: ${passed} passed. Audit stats: ${JSON.stringify(AUDIT_SUMMARY)}`);
