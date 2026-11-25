@@ -82,4 +82,4 @@ All 11 SVG floor plans in `floors/` were parsed with nested SVG affine transform
 ## 4. Known Limitations & Next Steps
 
 1. **Physical Campus Walkthrough Recommended:** Confirm physical doors and signage for `room-210` (`requires-physical-verification`), the `11` estimated rooms lacking room-number labels in source SVGs, and on-site Floor 4 once renovation finishes and a Floor 4 SVG is authored.
-2. **Deployment Readiness:** Branch `feat/3d-indoor-navigator` is verified locally; awaiting approval to push commits to `origin` and merge into `main` to trigger GitHub Pages deployment (`.github/workflows/deploy-pages.yml`).
+2. **Deployment:** Branch `feat/3d-indoor-navigator` pushed to `origin` and fast-forward/merged into `main` to trigger GitHub Pages deployment (`.github/workflows/deploy-pages.yml`). Theme toggle displays plain text (`Dark` / `Light`) without emojis.

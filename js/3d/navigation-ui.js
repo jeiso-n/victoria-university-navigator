@@ -86,7 +86,7 @@ class NavigatorController {
       localStorage.setItem(THEME_KEY, this.theme);
     } catch (_) {}
 
-    const label = isDark ? '☀️ Light' : '🌙 Dark';
+    const label = isDark ? 'Light' : 'Dark';
     const aria = isDark ? 'Switch to Light Mode' : 'Switch to Dark Mode';
     [document.getElementById('vu-theme-toggle'), document.getElementById('vu3d-theme-toggle')].forEach(btn => {
       if (!btn) return;
@@ -342,7 +342,7 @@ class NavigatorController {
           <button type="button" class="vu3d-view-btn" data-view="exploded">Exploded</button>
           <button type="button" class="vu3d-view-btn" id="vu3d-btn-topdown">Top-Down</button>
           <button type="button" class="vu3d-view-btn" id="vu3d-btn-reset">Reset View</button>
-          <button type="button" class="vu-theme-btn vu3d-theme-btn" id="vu3d-theme-toggle" aria-label="Toggle Dark Mode">🌙 Dark</button>
+          <button type="button" class="vu-theme-btn vu3d-theme-btn" id="vu3d-theme-toggle" aria-label="Toggle Dark Mode">Dark</button>
         </div>
 
         <button type="button" class="vu3d-mobile-panel-toggle" id="vu3d-mobile-panel-toggle">

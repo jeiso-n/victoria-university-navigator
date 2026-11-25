@@ -520,20 +520,26 @@ async function run() {
       assert.equal(pinRestored.emissiveChanged, true, 'Expected animated arrow pulse update over time');
       await snap('verify_floor3_pin_arrows.png');
 
-      // 5. Test Dark Mode persistence + 3D background theme update + Light Mode toggle back
+      // 5. Test Dark Mode persistence + 3D background theme update + Light Mode toggle back (plain text labels)
+      assert.equal(await cdp.eval("document.getElementById('vu3d-theme-toggle').textContent.trim()"), 'Dark');
       await cdp.eval("document.getElementById('vu3d-theme-toggle').click()");
       const darkState = await cdp.eval(`(() => ({
         attr: document.documentElement.getAttribute('data-theme'),
         stored: localStorage.getItem('vu_theme_v1'),
         bgHex: window.__VU_NAVIGATOR__.sceneManager.scene.background.getHex(),
+        btnText: document.getElementById('vu3d-theme-toggle').textContent.trim(),
+        headerBtnText: document.getElementById('vu-theme-toggle').textContent.trim(),
       }))()`);
       assert.equal(darkState.attr, 'dark');
       assert.equal(darkState.stored, 'dark');
       assert.equal(darkState.bgHex, 0x0b1325);
+      assert.equal(darkState.btnText, 'Light');
+      assert.equal(darkState.headerBtnText, 'Light');
       await snap('verify_dark_mode_3d.png');
 
       await cdp.eval("document.getElementById('vu3d-theme-toggle').click()");
       assert.equal(await cdp.eval("localStorage.getItem('vu_theme_v1')"), 'light');
+      assert.equal(await cdp.eval("document.getElementById('vu3d-theme-toggle').textContent.trim()"), 'Dark');
 
       // Exit back to 2D MAP
       await cdp.eval("document.getElementById('btn-mode-2d').click()");
