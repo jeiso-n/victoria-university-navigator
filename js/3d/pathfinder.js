@@ -182,9 +182,13 @@ export class IndoorPathfinder {
           floor: startFloor,
           toFloor: endFloor,
           kind: transKind,
+          stairSide: transKind === 'stairs' ? (direction === 'up' ? 'right' : 'left') : undefined,
+          direction,
           instruction: transKind === 'elevator'
             ? `Take the elevator ${direction} from ${startFloorName} to ${endFloorName}.`
-            : `Take the staircase ${direction} from ${startFloorName} to ${endFloorName}.`,
+            : direction === 'up'
+              ? `Take the right-hand staircase up from ${startFloorName} to ${endFloorName}.`
+              : `Take the left-hand staircase down from ${startFloorName} to ${endFloorName}.`,
           node: fromNode,
           endNode: exitNode,
         });
@@ -225,7 +229,7 @@ export class IndoorPathfinder {
             stepNumber: stepNum++,
             floor: toNode.floor,
             kind: 'walk',
-            instruction: `${turnPhrase} ${toNode.label} (~${Math.round(dist)}m).`,
+            instruction: `${turnPhrase} ${toNode.label}.`,
             node: fromNode,
             endNode: toNode,
           });

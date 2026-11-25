@@ -41,7 +41,7 @@ function writeSavedState(patch) {
   try {
     const next = { ...readSavedState(), ...patch };
     sessionStorage.setItem(STORAGE_KEY, JSON.stringify(next));
-  } catch (_) {}
+  } catch (_) { }
 }
 
 class NavigatorController {
@@ -84,7 +84,7 @@ class NavigatorController {
     document.body.classList.toggle('dark-mode', isDark);
     try {
       localStorage.setItem(THEME_KEY, this.theme);
-    } catch (_) {}
+    } catch (_) { }
 
     const label = isDark ? 'Light' : 'Dark';
     const aria = isDark ? 'Switch to Light Mode' : 'Switch to Dark Mode';
@@ -338,9 +338,8 @@ class NavigatorController {
         <div class="vu3d-view-controls" role="group" aria-label="3D View Modes">
           <button type="button" class="vu3d-view-btn active" data-view="building">Full Building</button>
           <button type="button" class="vu3d-view-btn" data-view="isolated">Isolate Floor</button>
-          <button type="button" class="vu3d-view-btn" data-view="cutaway">Cutaway</button>
           <button type="button" class="vu3d-view-btn" data-view="exploded">Exploded</button>
-          <button type="button" class="vu3d-view-btn" id="vu3d-btn-topdown">Top-Down</button>
+          <button type="button" class="vu3d-view-btn" id="vu3d-btn-topdown">Map View</button>
           <button type="button" class="vu3d-view-btn" id="vu3d-btn-reset">Reset View</button>
           <button type="button" class="vu-theme-btn vu3d-theme-btn" id="vu3d-theme-toggle" aria-label="Toggle Dark Mode">Dark</button>
         </div>
@@ -372,13 +371,6 @@ class NavigatorController {
                   ${allStartOptionsHtml}
                 </optgroup>
               </select>
-            </div>
-            <div class="vu3d-route-mode-row">
-              <span class="vu3d-label">Vertical Travel:</span>
-              <div class="vu3d-mode-pills">
-                <button type="button" class="vu3d-vmode active" data-vmode="elevator">🛗 Elevator</button>
-                <button type="button" class="vu3d-vmode" data-vmode="stairs">🪜 Stairs</button>
-              </div>
             </div>
           </div>
 
@@ -467,6 +459,8 @@ class NavigatorController {
     el.querySelectorAll('.vu3d-view-btn[data-view]').forEach(btn => {
       btn.addEventListener('click', () => {
         this.topDown = false;
+        const mapBtn = el.querySelector('#vu3d-btn-topdown');
+        if (mapBtn) mapBtn.classList.remove('active');
         this.viewMode = btn.dataset.view;
         this.setFloorAndView(this.activeFloor, this.viewMode);
       });
@@ -522,7 +516,7 @@ class NavigatorController {
       this.render3DSearchResults('');
     });
 
-    // Start room & vertical mode
+    // Start room selection
     const startSel = el.querySelector('#vu3d-start-select');
     startSel.value = this.startRoomId;
     startSel.addEventListener('change', () => {
@@ -530,16 +524,6 @@ class NavigatorController {
       if (this.selectedRoom && this.currentRoute) {
         this.startNavigationTo(this.selectedRoom);
       }
-    });
-
-    el.querySelectorAll('.vu3d-vmode').forEach(btn => {
-      btn.addEventListener('click', () => {
-        this.routeMode = btn.dataset.vmode;
-        el.querySelectorAll('.vu3d-vmode').forEach(b => b.classList.toggle('active', b === btn));
-        if (this.selectedRoom && this.currentRoute) {
-          this.startNavigationTo(this.selectedRoom);
-        }
-      });
     });
 
     el.querySelector('#vu3d-clear-route').addEventListener('click', () => this.clearRoute());
@@ -755,11 +739,18 @@ class NavigatorController {
     }
   }
 
+  setRouteMode(mode) {
+    this.routeMode = mode === 'stairs' ? 'stairs' : 'elevator';
+    if (this.selectedRoom && this.sceneManager) {
+      this.startNavigationTo(this.selectedRoom, { keepFocusOnRoom: true, preserveViewMode: true });
+    }
+  }
+
   handleSelectRoom(rm, moveCamera = true) {
     if (!rm) return;
     this.selectedRoom = rm;
     this.activeFloor = rm.floor;
-    if (this.viewMode === 'building') this.viewMode = 'cutaway';
+    if (this.viewMode === 'building') this.viewMode = 'isolated';
 
     if (this.sceneManager) {
       this.sceneManager.selectRoom(rm.id, moveCamera);
@@ -777,7 +768,8 @@ class NavigatorController {
     if (!this.sceneManager || !destRoom) return;
     this.stopWalkthrough();
 
-    const route = this.sceneManager.calculateRoute(this.startRoomId, destRoom.id, this.routeMode, options);
+    const effectiveMode = options.mode || this.routeMode || 'elevator';
+    const route = this.sceneManager.calculateRoute(this.startRoomId, destRoom.id, effectiveMode, options);
     if (!route) return;
     this.currentRoute = route;
     this.activeStepIdx = 0;
@@ -800,7 +792,7 @@ class NavigatorController {
 
     panel.hidden = false;
     bottomBar.hidden = false;
-    stats.textContent = `${route.distanceMeters}m · ~${route.estimatedSeconds}s (${route.mode})`;
+    stats.textContent = `${formatFloorLabel(route.startRoom.floor)} to ${formatFloorLabel(route.destRoom.floor)}`;
 
     list.innerHTML = route.steps.map((s, idx) => `
       <li class="vu3d-step-item ${idx === 0 ? 'active' : ''} ${s.kind === 'notice' ? 'notice' : ''}" data-step-idx="${idx}">
@@ -835,8 +827,8 @@ class NavigatorController {
     if (this.sceneManager) {
       const targetFloor = step.toFloor || step.floor;
       if (!skipCameraMove) {
-        if (this.viewMode === 'isolated' || this.viewMode === 'cutaway') {
-          this.sceneManager.setViewMode(this.viewMode, targetFloor);
+        if (this.viewMode === 'isolated') {
+          this.sceneManager.setViewMode('isolated', targetFloor);
         }
         this.sceneManager.cameraController.focusOnRouteStep(step);
       }

@@ -343,6 +343,11 @@ export class NavigationGraph {
     this.adj.get(toId).push({ to: fromId, weight, kind, ...extra });
   }
 
+  addDirectedEdge(fromId, toId, weight, kind, extra = {}) {
+    if (!this.adj.has(fromId) || !this.adj.has(toId)) return;
+    this.adj.get(fromId).push({ to: toId, weight, kind, ...extra });
+  }
+
   build() {
     this.nodes.clear();
     this.adj.clear();
@@ -355,13 +360,20 @@ export class NavigationGraph {
       if (!layout) continue;
 
       const elevId = `elev-${code}`;
+      const elevLeftId = `elev-left-${code}`;
+      const elevRightId = `elev-right-${code}`;
       const swId = `stairs-west-${code}`;
       const seId = `stairs-east-${code}`;
 
       const floorDisplay = formatFloorLabel(code);
-      this.addNode({ id: elevId, floor: code, levelIndex: def.levelIndex, x: layout.elev[0], z: layout.elev[1], type: 'elevator', label: `${floorDisplay} Elevator` });
-      this.addNode({ id: swId, floor: code, levelIndex: def.levelIndex, x: layout.stairsWest[0], z: layout.stairsWest[1], type: 'stairs', label: `${floorDisplay} West Staircase` });
-      this.addNode({ id: seId, floor: code, levelIndex: def.levelIndex, x: layout.stairsEast[0], z: layout.stairsEast[1], type: 'stairs', label: `${floorDisplay} East Staircase` });
+      this.addNode({ id: elevId, floor: code, levelIndex: def.levelIndex, x: layout.elev[0], z: layout.elev[1], type: 'elevator', label: `${floorDisplay} Central Elevator Core` });
+      this.addNode({ id: elevLeftId, floor: code, levelIndex: def.levelIndex, x: layout.elev[0] - 1.0, z: layout.elev[1] - 0.8, type: 'elevator', elevatorSide: 'left', label: `${floorDisplay} Left Elevator` });
+      this.addNode({ id: elevRightId, floor: code, levelIndex: def.levelIndex, x: layout.elev[0] + 1.0, z: layout.elev[1] - 0.8, type: 'elevator', elevatorSide: 'right', label: `${floorDisplay} Right Elevator` });
+      this.addNode({ id: swId, floor: code, levelIndex: def.levelIndex, x: layout.stairsWest[0], z: layout.stairsWest[1], type: 'stairs', stairSide: 'left', stairDirection: 'down', label: `${floorDisplay} Left Staircase` });
+      this.addNode({ id: seId, floor: code, levelIndex: def.levelIndex, x: layout.stairsEast[0], z: layout.stairsEast[1], type: 'stairs', stairSide: 'right', stairDirection: 'up', label: `${floorDisplay} Right Staircase` });
+
+      this.addEdge(elevId, elevLeftId, 1.0, 'walk');
+      this.addEdge(elevId, elevRightId, 1.0, 'walk');
 
       const localToGlobal = (localId) => {
         if (localId === 'elev') return elevId;
@@ -405,13 +417,31 @@ export class NavigationGraph {
       }
     }
 
-    // 2. Connect vertical elevator & staircase edges between consecutive levels (B2 <-> 9)
+    // 2. Connect vertical elevator & directional staircase edges between consecutive levels (B2 <-> 9)
+    // Right-hand staircase (stairs-east) is strictly UP (fA -> fB).
+    // Left-hand staircase (stairs-west) is strictly DOWN (fB -> fA).
     for (let i = 0; i < FLOOR_DEFINITIONS.length - 1; i++) {
-      const fA = FLOOR_DEFINITIONS[i];
-      const fB = FLOOR_DEFINITIONS[i + 1];
+      const fA = FLOOR_DEFINITIONS[i];     // Lower floor
+      const fB = FLOOR_DEFINITIONS[i + 1]; // Next floor above
       this.addEdge(`elev-${fA.code}`, `elev-${fB.code}`, 4.5, 'elevator');
-      this.addEdge(`stairs-west-${fA.code}`, `stairs-west-${fB.code}`, 9.5, 'stairs');
-      this.addEdge(`stairs-east-${fA.code}`, `stairs-east-${fB.code}`, 9.5, 'stairs');
+      this.addEdge(`elev-left-${fA.code}`, `elev-left-${fB.code}`, 4.5, 'elevator', { elevatorSide: 'left' });
+      this.addEdge(`elev-right-${fA.code}`, `elev-right-${fB.code}`, 4.5, 'elevator', { elevatorSide: 'right' });
+
+      // Right-hand staircase: UP from fA to fB
+      this.addDirectedEdge(`stairs-east-${fA.code}`, `stairs-east-${fB.code}`, 9.5, 'stairs', {
+        direction: 'up',
+        side: 'right',
+        fromFloor: fA.code,
+        toFloor: fB.code,
+      });
+
+      // Left-hand staircase: DOWN from fB to fA
+      this.addDirectedEdge(`stairs-west-${fB.code}`, `stairs-west-${fA.code}`, 9.5, 'stairs', {
+        direction: 'down',
+        side: 'left',
+        fromFloor: fB.code,
+        toFloor: fA.code,
+      });
     }
 
     // 3. Add every room's doorway node + interior node, attaching doorway to nearest walkable corridor node

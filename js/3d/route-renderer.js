@@ -170,9 +170,13 @@ export class RouteRenderer {
           endIdx++;
         }
         const destFloor = route.path[endIdx].floor;
-        const dirWord = route.path[endIdx].levelIndex > a.levelIndex ? 'UP ↑' : 'DOWN ↓';
+        const dirWord = route.path[endIdx].levelIndex > a.levelIndex ? 'UP' : 'DOWN';
         const badge = createTransitionSprite(
-          isElevator ? `🛗 Elevator ${dirWord}` : `🪜 Stairs ${dirWord}`,
+          isElevator
+            ? `Elevator ${dirWord}`
+            : dirWord === 'UP'
+              ? 'Right Staircase UP'
+              : 'Left Staircase DOWN',
           `To ${formatFloorLabel(destFloor)}`,
           isElevator ? '#9333ea' : '#0284c7'
         );

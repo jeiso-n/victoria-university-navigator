@@ -191,7 +191,7 @@ export class SceneManager {
     const rm = this.roomManager.selectRoom(roomId);
     if (!rm) return null;
     if (this.building.viewMode === 'building') {
-      this.building.applyViewMode('cutaway', rm.floor);
+      this.building.applyViewMode('isolated', rm.floor);
     } else {
       this.building.applyViewMode(this.building.viewMode, rm.floor);
     }
@@ -208,9 +208,7 @@ export class SceneManager {
     const route = this.pathfinder.findRoute(startRoomId, destRoomId, { mode });
     if (!route) return null;
     if (!options.preserveViewMode) {
-      const maxLvl = Math.max(route.startRoom.levelIndex, route.destRoom.levelIndex);
-      const highestCode = route.startRoom.levelIndex === maxLvl ? route.startRoom.floor : route.destRoom.floor;
-      this.building.applyViewMode(route.startRoom.floor === route.destRoom.floor ? 'isolated' : 'cutaway', highestCode);
+      this.building.applyViewMode('isolated', route.startRoom.floor);
     }
     this.roomManager.selectRoom(route.destRoom.id);
     this.routeRenderer.renderRoute(route);

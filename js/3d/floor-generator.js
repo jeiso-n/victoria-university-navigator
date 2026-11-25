@@ -7,6 +7,8 @@ import * as THREE from '../vendor/three.module.js';
 import {
   BUILDING_WIDTH,
   BUILDING_DEPTH,
+  FLOOR_HEIGHT,
+  FLOOR_DEFINITIONS,
   SLAB_THICKNESS,
   WALL_HEIGHT,
   ENHANCED_ROOM_DB,
@@ -343,7 +345,17 @@ export function buildFloorGroup(floorDef, floorGeom) {
   }
 
   // 3. Doorways (frames + semi-transparent door leaf + header lintel)
+  // Skip any SVG door strokes inside the north elevator/stair circulation core so no stray door stands in front of the elevators
+  const elevBoxForDoors = floorGeom.elevator || [-4.0, -25.0, 4.0, -21.0];
   for (const d of doors) {
+    if (
+      d.cx >= elevBoxForDoors[0] - 2.2 &&
+      d.cx <= elevBoxForDoors[2] + 2.2 &&
+      d.cz >= elevBoxForDoors[1] - 2.2 &&
+      d.cz <= elevBoxForDoors[3] + 2.2
+    ) {
+      continue;
+    }
     const doorW = Math.min(Math.max(d.width, 1.3), 2.2);
     const doorH = 2.25;
     const doorGroup = new THREE.Group();
@@ -399,124 +411,476 @@ export function buildFloorGroup(floorDef, floorGeom) {
     group.add(sp);
   }
 
-  // 5. Purple Elevator Core & Open-Approach Staircases
+  // 5. Central Dual-Elevator Core & Physically Attached Directional Staircases (Right = UP, Left = DOWN)
   const fullFloorName = formatFloorLabel(floorDef.code);
   const elevCoords = floorGeom.elevator || [-4.0, -25.0, 4.0, -21.0];
   {
-    const [ex1, ez1, ex2, ez2] = elevCoords;
-    const ew = Math.max(2.6, ex2 - ex1);
-    const ed = Math.max(2.0, ez2 - ez1);
-    const ecx = (ex1 + ex2) / 2;
-    const ecz = (ez1 + ez2) / 2;
+    const [rawEx1, rawEz1, rawEx2, rawEz2] = elevCoords;
+    const ecx = (rawEx1 + rawEx2) / 2;
+    const ecz = (rawEz1 + rawEz2) / 2;
+
+    // Consistent architectural proportions matching s1.png - s4.png
+    const coreW = 4.0;
+    const coreD = 2.5;
+    const coreH = FLOOR_HEIGHT;
+    const stairW = 1.35;
+    const rearDeckD = 1.1;
+
+    const coreX1 = ecx - coreW / 2;
+    const coreX2 = ecx + coreW / 2;
+    const coreZ1 = ecz - coreD / 2;
+    const coreZ2 = ecz + coreD / 2; // Front face (South, facing floor corridor)
+
+    const leftStairX = coreX1 - stairW / 2;
+    const rightStairX = coreX2 + stairW / 2;
 
     const elevGroup = new THREE.Group();
     elevGroup.name = `elevator-core-${floorDef.code}`;
-    elevGroup.userData.isElevatorCore = true;
+    elevGroup.userData = {
+      isElevatorCore: true,
+      floorCode: floorDef.code,
+      elevatorCount: 2,
+      coreBounds: [coreX1, coreZ1, coreX2, coreZ2],
+      leftStairX,
+      rightStairX,
+    };
 
-    // Distinct purple landing pad
-    const pad = new THREE.Mesh(new THREE.BoxGeometry(ew + 0.3, 0.1, ed + 0.5), sharedMaterials.elevatorFloor);
-    pad.position.set(ecx, 0.05, ecz + 0.15);
-    pad.userData.isElevatorSurface = true;
-    elevGroup.add(pad);
+    const railGlassMat = new THREE.MeshPhysicalMaterial({
+      color: 0x94a3b8,
+      transparent: true,
+      opacity: 0.34,
+      roughness: 0.2,
+      depthWrite: false,
+    });
+    const topRailWoodMat = new THREE.MeshStandardMaterial({
+      color: 0xb45309,
+      roughness: 0.45,
+      metalness: 0.2,
+    });
+    const landingDeckMat = new THREE.MeshStandardMaterial({
+      color: 0xcbd5e1,
+      roughness: 0.72,
+      metalness: 0.12,
+    });
+    const stringerMat = new THREE.MeshStandardMaterial({
+      color: 0x334155,
+      roughness: 0.5,
+      metalness: 0.45,
+    });
+    const treadTopMat = new THREE.MeshStandardMaterial({
+      color: 0xd97706,
+      roughness: 0.55,
+      metalness: 0.1,
+    });
 
-    // Glowing purple rim
-    const padRim = new THREE.LineSegments(
-      new THREE.EdgesGeometry(new THREE.BoxGeometry(ew + 0.34, 0.12, ed + 0.54)),
+    // 5a. Attached Circulation Landing Slab wrapping Left, Front, and Right of the Dual-Elevator Core
+    const totalStructW = coreW + stairW * 2;
+    const totalStructD = coreD + 0.9;
+    const baseDeck = new THREE.Mesh(
+      new THREE.BoxGeometry(totalStructW, 0.14, totalStructD),
+      landingDeckMat
+    );
+    baseDeck.position.set(ecx, 0.07, ecz + 0.25);
+    elevGroup.add(baseDeck);
+
+    // Purple elevator threshold apron directly in front of the two elevator doors (as in s4.png)
+    const apron = new THREE.Mesh(
+      new THREE.BoxGeometry(coreW + 0.16, 0.16, coreD + 0.55),
+      sharedMaterials.elevatorFloor
+    );
+    apron.position.set(ecx, 0.08, ecz + 0.15);
+    apron.userData.isElevatorSurface = true;
+    elevGroup.add(apron);
+
+    const apronRim = new THREE.LineSegments(
+      new THREE.EdgesGeometry(new THREE.BoxGeometry(coreW + 0.2, 0.18, coreD + 0.58)),
       new THREE.LineBasicMaterial({ color: 0xd8b4fe })
     );
-    padRim.position.copy(pad.position);
-    elevGroup.add(padRim);
+    apronRim.position.copy(apron.position);
+    elevGroup.add(apronRim);
 
-    // Translucent purple back & side walls (front remains open for entrance doors)
-    const coreH = 2.65;
-    const backWall = new THREE.Mesh(new THREE.BoxGeometry(ew, coreH, 0.14), sharedMaterials.elevatorWall);
-    backWall.position.set(ecx, coreH / 2, ez1);
+    // Structural outer support columns at the 4 corners of the attached staircase bays
+    const outerLeftX = coreX1 - stairW;
+    const outerRightX = coreX2 + stairW;
+    const frontDeckZ = coreZ2 + 0.65;
+    const backDeckZ = coreZ1 - rearDeckD;
+    const postGeo = new THREE.BoxGeometry(0.18, coreH, 0.18);
+    for (const [px, pz] of [
+      [outerLeftX + 0.09, frontDeckZ - 0.09],
+      [outerLeftX + 0.09, coreZ1 + 0.09],
+      [outerLeftX + 0.09, backDeckZ + 0.09],
+      [outerRightX - 0.09, frontDeckZ - 0.09],
+      [outerRightX - 0.09, coreZ1 + 0.09],
+      [outerRightX - 0.09, backDeckZ + 0.09],
+    ]) {
+      const post = new THREE.Mesh(postGeo, stringerMat);
+      post.position.set(px, coreH / 2, pz);
+      elevGroup.add(post);
+    }
+
+    // 5b. Central Dual-Elevator Core Structure (Two side-by-side elevators in one housing)
+    const doorH = 2.22;
+    const fasciaY = 2.42;
+    const transomTopY = 3.65;
+
+    // Translucent purple rear wall, left wall, right wall, and central dividing wall between Elevator 1 & Elevator 2
+    const backWall = new THREE.Mesh(new THREE.BoxGeometry(coreW, transomTopY, 0.14), sharedMaterials.elevatorWall);
+    backWall.position.set(ecx, transomTopY / 2, coreZ1);
     backWall.userData.isElevatorSurface = true;
 
-    const leftWall = new THREE.Mesh(new THREE.BoxGeometry(0.14, coreH, ed), sharedMaterials.elevatorWall);
-    leftWall.position.set(ex1, coreH / 2, ecz);
-    leftWall.userData.isElevatorSurface = true;
+    const leftCoreWall = new THREE.Mesh(new THREE.BoxGeometry(0.16, transomTopY, coreD), sharedMaterials.elevatorWall);
+    leftCoreWall.position.set(coreX1, transomTopY / 2, ecz);
+    leftCoreWall.userData.isElevatorSurface = true;
 
-    const rightWall = new THREE.Mesh(new THREE.BoxGeometry(0.14, coreH, ed), sharedMaterials.elevatorWall);
-    rightWall.position.set(ex2, coreH / 2, ecz);
-    rightWall.userData.isElevatorSurface = true;
+    const rightCoreWall = new THREE.Mesh(new THREE.BoxGeometry(0.16, transomTopY, coreD), sharedMaterials.elevatorWall);
+    rightCoreWall.position.set(coreX2, transomTopY / 2, ecz);
+    rightCoreWall.userData.isElevatorSurface = true;
 
-    // Front portal + parted purple elevator double doors along South face (z = ez2)
-    const portalW = Math.min(ew * 0.72, 3.6);
-    const openGap = Math.min(1.6, portalW * 0.48);
-    const doorLeafW = Math.max(0.55, (portalW - openGap) / 2);
-    const doorH = 2.25;
+    const centerDividerWall = new THREE.Mesh(new THREE.BoxGeometry(0.16, transomTopY, coreD), sharedMaterials.elevatorFrame);
+    centerDividerWall.position.set(ecx, transomTopY / 2, ecz);
+    centerDividerWall.userData.isElevatorSurface = true;
 
-    const doorLeft = new THREE.Mesh(new THREE.BoxGeometry(doorLeafW, doorH, 0.1), sharedMaterials.elevatorDoor);
-    doorLeft.position.set(ecx - (openGap / 2 + doorLeafW / 2), doorH / 2, ez2);
-    doorLeft.userData.isElevatorDoor = true;
+    // Front vertical structural piers (Left, Center between the 2 elevators, Right)
+    const pierGeo = new THREE.BoxGeometry(0.24, transomTopY + 0.15, 0.22);
+    for (const px of [coreX1, ecx, coreX2]) {
+      const pier = new THREE.Mesh(pierGeo, sharedMaterials.elevatorFrame);
+      pier.position.set(px, (transomTopY + 0.15) / 2, coreZ2);
+      pier.userData.isElevatorSurface = true;
+      elevGroup.add(pier);
+    }
 
-    const doorRight = new THREE.Mesh(new THREE.BoxGeometry(doorLeafW, doorH, 0.1), sharedMaterials.elevatorDoor);
-    doorRight.position.set(ecx + (openGap / 2 + doorLeafW / 2), doorH / 2, ez2);
-    doorRight.userData.isElevatorDoor = true;
+    // Horizontal fascia beams across the front and top of the dual-elevator core
+    const midFascia = new THREE.Mesh(new THREE.BoxGeometry(coreW + 0.24, 0.24, 0.24), sharedMaterials.elevatorFrame);
+    midFascia.position.set(ecx, fasciaY, coreZ2);
+    const topFascia = new THREE.Mesh(new THREE.BoxGeometry(coreW + 0.28, 0.22, coreD + 0.24), sharedMaterials.elevatorFrame);
+    topFascia.position.set(ecx, transomTopY + 0.11, ecz);
+    elevGroup.add(backWall, leftCoreWall, rightCoreWall, centerDividerWall, midFascia, topFascia);
 
-    const portalHeader = new THREE.Mesh(new THREE.BoxGeometry(ew, coreH - doorH, 0.16), sharedMaterials.elevatorFrame);
-    portalHeader.position.set(ecx, doorH + (coreH - doorH) / 2, ez2);
-    portalHeader.userData.isElevatorSurface = true;
+    // Central call-button panel mounted on the center pier between the two elevators
+    const callPlate = new THREE.Mesh(
+      new THREE.BoxGeometry(0.14, 0.36, 0.05),
+      new THREE.MeshStandardMaterial({ color: 0xe2e8f0, roughness: 0.3, metalness: 0.5 })
+    );
+    callPlate.position.set(ecx, 1.18, coreZ2 + 0.12);
+    elevGroup.add(callPlate);
 
-    const topCap = new THREE.Mesh(new THREE.BoxGeometry(ew + 0.1, 0.12, ed + 0.1), sharedMaterials.elevatorWall);
-    topCap.position.set(ecx, coreH + 0.06, ecz);
-
-    elevGroup.add(backWall, leftWall, rightWall, doorLeft, doorRight, portalHeader, topCap);
-
-    const sp = createLabelSprite('🛗 Elevators', fullFloorName, '#7c3aed');
-    sp.position.set(ecx, 3.2, ecz + 0.4);
-    sp.scale.set(3.8, 1.18, 1);
-    labelSprites.push(sp);
-    elevGroup.add(sp);
-    group.add(elevGroup);
-  }
-
-  // Per-floor accessible staircases flanking the elevator core
-  const corridorLayout = FLOOR_CORRIDOR_LAYOUTS[floorDef.code];
-  if (corridorLayout) {
-    const stairSides = [
-      { key: 'west', pos: corridorLayout.stairsWest },
-      { key: 'east', pos: corridorLayout.stairsEast },
+    // Build Left Elevator (index 0) and Right Elevator (index 1) side by side
+    const bayCenters = [
+      { key: 'left', x: ecx - coreW / 4, label: 'Left Elevator' },
+      { key: 'right', x: ecx + coreW / 4, label: 'Right Elevator' },
     ];
-    for (const side of stairSides) {
-      if (!side.pos) continue;
-      const [sx, sz] = side.pos;
-      const stairZ = Math.min(sz - 1.4, -21.2);
-      const stairGroup = new THREE.Group();
-      stairGroup.name = `staircase-${floorDef.code}-${side.key}`;
-      stairGroup.userData.isStaircase = true;
+    for (const bay of bayCenters) {
+      const bayGroup = new THREE.Group();
+      bayGroup.name = `elevator-unit-${floorDef.code}-${bay.key}`;
+      bayGroup.userData = {
+        isElevatorUnit: true,
+        elevatorSide: bay.key,
+        floorCode: floorDef.code,
+      };
 
-      const landing = new THREE.Mesh(
-        new THREE.BoxGeometry(2.0, 0.08, 3.0),
-        new THREE.MeshStandardMaterial({ color: 0xe2e8f0, roughness: 0.75 })
+      const doorW = 1.38;
+      const leafW = (doorW - 0.05) / 2;
+
+      // Purple metallic door surround frame
+      const jambL = new THREE.Mesh(new THREE.BoxGeometry(0.1, doorH, 0.2), sharedMaterials.elevatorFrame);
+      jambL.position.set(bay.x - doorW / 2 - 0.05, doorH / 2, coreZ2 + 0.02);
+      const jambR = new THREE.Mesh(new THREE.BoxGeometry(0.1, doorH, 0.2), sharedMaterials.elevatorFrame);
+      jambR.position.set(bay.x + doorW / 2 + 0.05, doorH / 2, coreZ2 + 0.02);
+      const lintel = new THREE.Mesh(new THREE.BoxGeometry(doorW + 0.2, 0.12, 0.2), sharedMaterials.elevatorFrame);
+      lintel.position.set(bay.x, doorH + 0.06, coreZ2 + 0.02);
+
+      // Pair of sliding purple elevator door leaves per elevator (4 door leaves total across the 2 elevators)
+      const leafL = new THREE.Mesh(new THREE.BoxGeometry(leafW, doorH - 0.04, 0.08), sharedMaterials.elevatorDoor);
+      leafL.position.set(bay.x - leafW / 2 - 0.015, (doorH - 0.04) / 2, coreZ2 + 0.02);
+      leafL.userData.isElevatorDoor = true;
+      leafL.userData.elevatorSide = bay.key;
+
+      const leafR = new THREE.Mesh(new THREE.BoxGeometry(leafW, doorH - 0.04, 0.08), sharedMaterials.elevatorDoor);
+      leafR.position.set(bay.x + leafW / 2 + 0.015, (doorH - 0.04) / 2, coreZ2 + 0.02);
+      leafR.userData.isElevatorDoor = true;
+      leafR.userData.elevatorSide = bay.key;
+
+      // Digital overhead floor display above each elevator door (cyan glow as in s1.png)
+      const indicatorBox = new THREE.Mesh(
+        new THREE.BoxGeometry(0.46, 0.14, 0.08),
+        new THREE.MeshStandardMaterial({ color: 0x0f172a, roughness: 0.3 })
       );
-      landing.position.set(sx, 0.04, stairZ);
-      stairGroup.add(landing);
+      indicatorBox.position.set(bay.x, fasciaY, coreZ2 + 0.11);
+      const indicatorScreen = new THREE.Mesh(
+        new THREE.BoxGeometry(0.34, 0.07, 0.09),
+        new THREE.MeshStandardMaterial({ color: 0x38bdf8, emissive: 0x38bdf8, emissiveIntensity: 0.85 })
+      );
+      indicatorScreen.position.copy(indicatorBox.position);
 
-      const stepCount = 6;
-      for (let s = 0; s < stepCount; s++) {
-        const step = new THREE.Mesh(
-          new THREE.BoxGeometry(1.5, 0.24, 0.36),
-          sharedMaterials.stairStep
-        );
-        step.position.set(sx, 0.14 + s * 0.24, stairZ - 0.15 - s * 0.38);
-        stairGroup.add(step);
+      // Upper glass transom window above each elevator door (y = 2.54..3.58)
+      const transomH = transomTopY - fasciaY - 0.14;
+      const transomY = fasciaY + 0.12 + transomH / 2;
+      const transomGlass = new THREE.Mesh(
+        new THREE.BoxGeometry(coreW / 2 - 0.24, transomH, 0.06),
+        sharedMaterials.elevatorWall
+      );
+      transomGlass.position.set(bay.x, transomY, coreZ2);
+
+      // Internal elevator cab frame visible inside each shaft
+      const cabChamber = new THREE.Mesh(
+        new THREE.BoxGeometry(coreW / 2 - 0.36, doorH - 0.15, coreD - 0.36),
+        new THREE.MeshStandardMaterial({
+          color: 0x581c87,
+          emissive: 0x3b0764,
+          emissiveIntensity: 0.25,
+          roughness: 0.45,
+          metalness: 0.3,
+        })
+      );
+      cabChamber.position.set(bay.x, (doorH - 0.15) / 2 + 0.08, ecz);
+
+      bayGroup.add(jambL, jambR, lintel, leafL, leafR, indicatorBox, indicatorScreen, transomGlass, cabChamber);
+      elevGroup.add(bayGroup);
+    }
+
+    const elevSprite = createLabelSprite('Elevators (2)', fullFloorName, '#7c3aed');
+    elevSprite.position.set(ecx, 3.95, coreZ2 + 0.25);
+    elevSprite.scale.set(3.8, 1.18, 1);
+    labelSprites.push(elevSprite);
+    elevGroup.add(elevSprite);
+
+    // Helper to build a solid attached stair flight with treads, risers, stringer beams, and glass balustrade
+    const buildAttachedFlight = (pStart, pEnd, treadCount, width, axis) => {
+      const flightGroup = new THREE.Group();
+      const dx = pEnd.x - pStart.x;
+      const dy = pEnd.y - pStart.y;
+      const dz = pEnd.z - pStart.z;
+      const horizLen = Math.hypot(dx, dz);
+      const totalLen = Math.hypot(horizLen, dy);
+
+      for (let i = 0; i < treadCount; i++) {
+        const t = (i + 0.5) / treadCount;
+        const tx = pStart.x + dx * t;
+        const ty = pStart.y + dy * t;
+        const tz = pStart.z + dz * t;
+        const stepDepth = horizLen / treadCount;
+        const stepHeight = Math.abs(dy) / treadCount;
+
+        const treadGeo = axis === 'Z'
+          ? new THREE.BoxGeometry(width - 0.08, 0.07, stepDepth + 0.04)
+          : new THREE.BoxGeometry(stepDepth + 0.04, 0.07, width - 0.08);
+        const tread = new THREE.Mesh(treadGeo, treadTopMat);
+        tread.position.set(tx, ty, tz);
+
+        const riserGeo = axis === 'Z'
+          ? new THREE.BoxGeometry(width - 0.1, stepHeight, stepDepth * 0.85)
+          : new THREE.BoxGeometry(stepDepth * 0.85, stepHeight, width - 0.1);
+        const riser = new THREE.Mesh(riserGeo, sharedMaterials.stairStep);
+        riser.position.set(tx, ty - stepHeight * 0.45, tz);
+
+        flightGroup.add(tread, riser);
       }
 
-      const rail = new THREE.Mesh(new THREE.BoxGeometry(0.08, 0.08, 2.5), sharedMaterials.stairRail);
-      rail.position.set(sx + (side.key === 'west' ? -0.78 : 0.78), 1.35, stairZ - 1.1);
-      rail.rotation.x = 0.56;
-      stairGroup.add(rail);
+      // Structural sloped stringer carrier beam + top handrail
+      const midX = (pStart.x + pEnd.x) / 2;
+      const midY = (pStart.y + pEnd.y) / 2;
+      const midZ = (pStart.z + pEnd.z) / 2;
 
-      const sp = createLabelSprite('🪜 Stairs', fullFloorName, '#475569');
-      sp.position.set(sx, 2.3, stairZ);
-      sp.scale.set(2.6, 0.82, 1);
-      labelSprites.push(sp);
-      stairGroup.add(sp);
+      if (axis === 'Z') {
+        const pitch = Math.atan2(dy, dz);
+        const stringer = new THREE.Mesh(new THREE.BoxGeometry(0.14, 0.22, totalLen), stringerMat);
+        stringer.position.set(midX, midY - 0.16, midZ);
+        stringer.rotation.x = -pitch;
 
-      group.add(stairGroup);
+        const railOffset = midX > ecx ? width / 2 - 0.06 : -(width / 2 - 0.06);
+        const handrail = new THREE.Mesh(new THREE.BoxGeometry(0.08, 0.08, totalLen), topRailWoodMat);
+        handrail.position.set(midX + railOffset, midY + 0.92, midZ);
+        handrail.rotation.x = -pitch;
+
+        const glassPanel = new THREE.Mesh(new THREE.BoxGeometry(0.04, 0.78, totalLen * 0.95), railGlassMat);
+        glassPanel.position.set(midX + railOffset, midY + 0.48, midZ);
+        glassPanel.rotation.x = -pitch;
+
+        flightGroup.add(stringer, handrail, glassPanel);
+      } else {
+        const pitch = Math.atan2(dy, dx);
+        const stringer = new THREE.Mesh(new THREE.BoxGeometry(totalLen, 0.22, 0.14), stringerMat);
+        stringer.position.set(midX, midY - 0.16, midZ);
+        stringer.rotation.z = pitch;
+
+        const handrail = new THREE.Mesh(new THREE.BoxGeometry(totalLen, 0.08, 0.08), topRailWoodMat);
+        handrail.position.set(midX, midY + 0.92, midZ - (width / 2 - 0.06));
+        handrail.rotation.z = pitch;
+
+        const glassPanel = new THREE.Mesh(new THREE.BoxGeometry(totalLen * 0.95, 0.78, 0.04), railGlassMat);
+        glassPanel.position.set(midX, midY + 0.48, midZ - (width / 2 - 0.06));
+        glassPanel.rotation.z = pitch;
+
+        flightGroup.add(stringer, handrail, glassPanel);
+      }
+
+      return flightGroup;
+    };
+
+    // Helper to build a horizontal balustrade guardrail segment
+    const buildGuardrail = (x1, z1, x2, z2, yBase) => {
+      const len = Math.hypot(x2 - x1, z2 - z1);
+      const rg = new THREE.Group();
+      const glass = new THREE.Mesh(new THREE.BoxGeometry(len, 0.82, 0.05), railGlassMat);
+      glass.position.set((x1 + x2) / 2, yBase + 0.45, (z1 + z2) / 2);
+      glass.rotation.y = -Math.atan2(z2 - z1, x2 - x1);
+
+      const topBar = new THREE.Mesh(new THREE.BoxGeometry(len + 0.06, 0.08, 0.09), topRailWoodMat);
+      topBar.position.set((x1 + x2) / 2, yBase + 0.9, (z1 + z2) / 2);
+      topBar.rotation.y = glass.rotation.y;
+      rg.add(glass, topBar);
+      return rg;
+    };
+
+    // 5c. RIGHT-HAND STAIRCASE: UP (connects current floor L to next floor L + 1 above)
+    const rightStairGroup = new THREE.Group();
+    rightStairGroup.name = `staircase-${floorDef.code}-east`;
+    const hasUpConnection = floorDef.levelIndex < 9;
+    const nextFloorDef = FLOOR_DEFINITIONS.find(f => f.levelIndex === floorDef.levelIndex + 1);
+    rightStairGroup.userData = {
+      isStaircase: true,
+      stairSide: 'right',
+      stairDirection: 'up',
+      fromFloor: floorDef.code,
+      toFloor: nextFloorDef ? nextFloorDef.code : null,
+      connectedToCore: true,
+    };
+
+    // Lower landing attached flush to current floor and right wall of elevator core
+    const rightLowerLanding = new THREE.Mesh(
+      new THREE.BoxGeometry(stairW, 0.16, 1.15),
+      landingDeckMat
+    );
+    rightLowerLanding.position.set(rightStairX, 0.08, coreZ2 + 0.1);
+    rightStairGroup.add(rightLowerLanding);
+
+    if (hasUpConnection) {
+      const midY = coreH * 0.52;
+      // Flight 1: ascends along the right wall of the elevator core from front-right lower landing to rear-right turn landing
+      const upFlight1 = buildAttachedFlight(
+        new THREE.Vector3(rightStairX, 0.14, coreZ2 - 0.35),
+        new THREE.Vector3(rightStairX, midY, coreZ1 + 0.05),
+        9,
+        stairW,
+        'Z'
+      );
+      rightStairGroup.add(upFlight1);
+
+      // Mid-level turn landing physically attached to the back-right of the elevator core
+      const rearRightLanding = new THREE.Mesh(
+        new THREE.BoxGeometry(coreW / 2 + stairW, 0.16, rearDeckD),
+        landingDeckMat
+      );
+      rearRightLanding.position.set(ecx + (coreW / 2 + stairW) / 2, midY - 0.04, coreZ1 - rearDeckD / 2);
+      rightStairGroup.add(rearRightLanding);
+      rightStairGroup.add(buildGuardrail(outerRightX, coreZ1, outerRightX, backDeckZ, midY));
+      rightStairGroup.add(buildGuardrail(ecx, backDeckZ, outerRightX, backDeckZ, midY));
+
+      // Flight 2: ascends across the rear wall of the elevator core to the upper landing attached to the next floor (y = coreH)
+      const upFlight2 = buildAttachedFlight(
+        new THREE.Vector3(ecx, midY + 0.06, coreZ1 - rearDeckD / 2),
+        new THREE.Vector3(coreX1, coreH, coreZ1 - rearDeckD / 2),
+        7,
+        rearDeckD,
+        'X'
+      );
+      rightStairGroup.add(upFlight2);
+
+      // Upper landing connecting flush at y = coreH (next floor elevation)
+      const upperAttachmentLanding = new THREE.Mesh(
+        new THREE.BoxGeometry(stairW, 0.16, rearDeckD + 0.6),
+        landingDeckMat
+      );
+      upperAttachmentLanding.position.set(leftStairX, coreH - 0.06, coreZ1 - rearDeckD / 2 + 0.3);
+      rightStairGroup.add(upperAttachmentLanding);
+
+      const upSprite = createLabelSprite('Stairs UP', `To ${formatFloorLabel(nextFloorDef.code)}`, '#0284c7');
+      upSprite.position.set(rightStairX, 2.25, coreZ2 + 0.25);
+      upSprite.scale.set(2.8, 0.88, 1);
+      labelSprites.push(upSprite);
+      rightStairGroup.add(upSprite);
+    } else {
+      // Top floor (Floor 9): safety guardrail around top right landing deck (no flight above Floor 9)
+      rightStairGroup.add(buildGuardrail(outerRightX, coreZ2 + 0.5, outerRightX, coreZ1, 0.12));
+      rightStairGroup.add(buildGuardrail(coreX2, coreZ1, outerRightX, coreZ1, 0.12));
     }
+    elevGroup.add(rightStairGroup);
+
+    // 5d. LEFT-HAND STAIRCASE: DOWN (connects current floor L to lower floor L - 1 below)
+    const leftStairGroup = new THREE.Group();
+    leftStairGroup.name = `staircase-${floorDef.code}-west`;
+    const hasDownConnection = floorDef.levelIndex > -2;
+    const prevFloorDef = FLOOR_DEFINITIONS.find(f => f.levelIndex === floorDef.levelIndex - 1);
+    leftStairGroup.userData = {
+      isStaircase: true,
+      stairSide: 'left',
+      stairDirection: 'down',
+      fromFloor: floorDef.code,
+      toFloor: prevFloorDef ? prevFloorDef.code : null,
+      connectedToCore: true,
+    };
+
+    // Upper landing attached flush to current floor and left wall of elevator core
+    const leftUpperLanding = new THREE.Mesh(
+      new THREE.BoxGeometry(stairW, 0.16, 1.15),
+      landingDeckMat
+    );
+    leftUpperLanding.position.set(leftStairX, 0.08, coreZ2 + 0.1);
+    leftStairGroup.add(leftUpperLanding);
+
+    if (hasDownConnection) {
+      const midDownY = -coreH * 0.48;
+      // Flight 1: descends along the left wall of the elevator core from front-left upper landing to rear-left turn landing
+      const downFlight1 = buildAttachedFlight(
+        new THREE.Vector3(leftStairX, 0.04, coreZ2 - 0.35),
+        new THREE.Vector3(leftStairX, midDownY, coreZ1 + 0.05),
+        9,
+        stairW,
+        'Z'
+      );
+      leftStairGroup.add(downFlight1);
+
+      // Mid-level turn landing attached to the back-left of the elevator core
+      const rearLeftLanding = new THREE.Mesh(
+        new THREE.BoxGeometry(coreW / 2 + stairW, 0.16, rearDeckD),
+        landingDeckMat
+      );
+      rearLeftLanding.position.set(ecx - (coreW / 2 + stairW) / 2, midDownY - 0.04, coreZ1 - rearDeckD / 2);
+      leftStairGroup.add(rearLeftLanding);
+      leftStairGroup.add(buildGuardrail(outerLeftX, coreZ1, outerLeftX, backDeckZ, midDownY));
+      leftStairGroup.add(buildGuardrail(outerLeftX, backDeckZ, ecx, backDeckZ, midDownY));
+
+      // Flight 2: descends across the rear of the elevator core to the lower landing on the floor below (y = -coreH)
+      const downFlight2 = buildAttachedFlight(
+        new THREE.Vector3(ecx, midDownY - 0.06, coreZ1 - rearDeckD / 2),
+        new THREE.Vector3(coreX2, -coreH, coreZ1 - rearDeckD / 2),
+        7,
+        rearDeckD,
+        'X'
+      );
+      leftStairGroup.add(downFlight2);
+
+      // Lower landing connecting flush at y = -coreH (floor below elevation)
+      const lowerAttachmentLanding = new THREE.Mesh(
+        new THREE.BoxGeometry(stairW, 0.16, rearDeckD + 0.6),
+        landingDeckMat
+      );
+      lowerAttachmentLanding.position.set(rightStairX, -coreH + 0.06, coreZ1 - rearDeckD / 2 + 0.3);
+      leftStairGroup.add(lowerAttachmentLanding);
+
+      const downSprite = createLabelSprite('Stairs DOWN', `To ${formatFloorLabel(prevFloorDef.code)}`, '#475569');
+      downSprite.position.set(leftStairX, 2.25, coreZ2 + 0.25);
+      downSprite.scale.set(2.8, 0.88, 1);
+      labelSprites.push(downSprite);
+      leftStairGroup.add(downSprite);
+    } else {
+      // Lowest floor (Basement 2): safety guardrail around bottom left landing deck (no flight below Basement 2)
+      leftStairGroup.add(buildGuardrail(outerLeftX, coreZ2 + 0.5, outerLeftX, coreZ1, 0.12));
+      leftStairGroup.add(buildGuardrail(outerLeftX, coreZ1, coreX1, coreZ1, 0.12));
+    }
+    elevGroup.add(leftStairGroup);
+
+    group.add(elevGroup);
   }
 
   // 6. Individual Rooms from ENHANCED_ROOM_DB for this floor

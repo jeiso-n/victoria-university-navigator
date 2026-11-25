@@ -91,49 +91,22 @@ export class BuildingGenerator {
     shaftWire.position.copy(shaftMesh.position);
     this.verticalCoreGroup.add(shaftWire);
 
-    // Animated elevator cab inside shaft
-    this.elevatorCab = new THREE.Mesh(
-      new THREE.BoxGeometry(4.4, 2.8, 3.0),
-      new THREE.MeshStandardMaterial({
-        color: 0x7c3aed,
-        emissive: 0x4c1d95,
-        emissiveIntensity: 0.35,
-        roughness: 0.3,
-        metalness: 0.4,
-      })
-    );
-    this.elevatorCab.position.set(0, 1.5, -22.5);
+    // Animated dual elevator cabs inside central shaft (Left cab & Right cab side by side)
+    this.elevatorCab = new THREE.Group();
+    const cabMat = new THREE.MeshStandardMaterial({
+      color: 0x7c3aed,
+      emissive: 0x4c1d95,
+      emissiveIntensity: 0.35,
+      roughness: 0.3,
+      metalness: 0.4,
+    });
+    const cabLeft = new THREE.Mesh(new THREE.BoxGeometry(1.75, 2.6, 2.2), cabMat);
+    cabLeft.position.set(-1.0, 0, 0);
+    const cabRight = new THREE.Mesh(new THREE.BoxGeometry(1.75, 2.6, 2.2), cabMat);
+    cabRight.position.set(1.0, 0, 0);
+    this.elevatorCab.add(cabLeft, cabRight);
+    this.elevatorCab.position.set(0, 1.45, -22.5);
     this.verticalCoreGroup.add(this.elevatorCab);
-
-    // Dual Staircase Flights connecting consecutive levels (West x = -6.2, East x = +6.2, z = -22.0)
-    const stairMat = new THREE.MeshStandardMaterial({ color: 0x64748b, roughness: 0.6, metalness: 0.25 });
-    const railMat = new THREE.MeshStandardMaterial({ color: 0x0f2242, roughness: 0.4, metalness: 0.5 });
-
-    for (let lvl = -2; lvl < 9; lvl++) {
-      const yBase = lvl * FLOOR_HEIGHT;
-      for (const sideX of [-6.4, 6.4]) {
-        const flight = new THREE.Group();
-        flight.position.set(sideX, yBase, -19.5);
-        const steps = 10;
-        const stepH = FLOOR_HEIGHT / steps;
-        const stepD = 3.2 / steps;
-        for (let s = 0; s < steps; s++) {
-          const stepMesh = new THREE.Mesh(
-            new THREE.BoxGeometry(1.8, stepH * 0.65, stepD),
-            stairMat
-          );
-          stepMesh.position.set(0, s * stepH + stepH * 0.3, -s * stepD);
-          flight.add(stepMesh);
-        }
-        // Handrail beam
-        const railLen = Math.hypot(FLOOR_HEIGHT, 3.2);
-        const rail = new THREE.Mesh(new THREE.BoxGeometry(0.1, 0.1, railLen), railMat);
-        rail.position.set(0.85, FLOOR_HEIGHT / 2 + 0.75, -1.6);
-        rail.rotation.x = Math.atan2(FLOOR_HEIGHT, 3.2);
-        flight.add(rail);
-        this.verticalCoreGroup.add(flight);
-      }
-    }
   }
 
   buildGroundContextPlaza() {
@@ -168,23 +141,19 @@ export class BuildingGenerator {
   }
 
   applyViewMode(mode, activeFloorCode = this.activeFloorCode) {
-    this.viewMode = mode;
+    const normalizedMode = mode === 'cutaway' ? 'isolated' : mode;
+    this.viewMode = normalizedMode;
     this.activeFloorCode = activeFloorCode;
-    const activeEntry = this.floors.get(activeFloorCode);
-    const activeLevel = activeEntry ? activeEntry.def.levelIndex : 0;
 
-    const spacing = mode === 'exploded' ? 8.2 : FLOOR_HEIGHT;
+    const spacing = normalizedMode === 'exploded' ? 8.2 : FLOOR_HEIGHT;
 
     for (const [code, entry] of this.floors.entries()) {
       const lvl = entry.def.levelIndex;
       entry.group.position.y = lvl * spacing;
 
-      if (mode === 'isolated') {
+      if (normalizedMode === 'isolated') {
         entry.group.visible = code === activeFloorCode;
         entry.exteriorGroup.visible = this.showExteriorGlass;
-      } else if (mode === 'cutaway') {
-        entry.group.visible = lvl <= activeLevel;
-        entry.exteriorGroup.visible = this.showExteriorGlass && lvl === activeLevel;
       } else {
         // 'building' or 'exploded'
         entry.group.visible = true;
@@ -193,8 +162,8 @@ export class BuildingGenerator {
 
       // Show floating room labels clearly on active floor (or all in exploded/isolated)
       const showLabels =
-        mode === 'isolated' ||
-        mode === 'exploded' ||
+        normalizedMode === 'isolated' ||
+        normalizedMode === 'exploded' ||
         code === activeFloorCode;
       for (const sp of entry.labelSprites) {
         sp.visible = showLabels;
@@ -202,23 +171,15 @@ export class BuildingGenerator {
     }
 
     // Hide the Ground context slab whenever isolating any floor (especially Basement 1 & Basement 2)
-    // or when cutting away down to a basement level
     if (this.groundPlazaGroup) {
-      if (mode === 'isolated' || mode === 'exploded') {
-        this.groundPlazaGroup.visible = false;
-      } else if (mode === 'cutaway') {
-        this.groundPlazaGroup.visible = activeLevel >= 0;
-      } else {
-        this.groundPlazaGroup.visible = true;
-      }
+      this.groundPlazaGroup.visible = normalizedMode === 'building';
     }
 
-    // Vertical shaft visibility & scaling (full tower / exploded show full 12-level shaft;
-    // isolated / cutaway rely on each floor's own purple elevator core & staircases without floating upper flights)
-    if (mode === 'exploded') {
+    // Vertical shaft visibility & scaling
+    if (normalizedMode === 'exploded') {
       this.verticalCoreGroup.visible = true;
       this.verticalCoreGroup.scale.y = spacing / FLOOR_HEIGHT;
-    } else if (mode === 'isolated' || mode === 'cutaway') {
+    } else if (normalizedMode === 'isolated') {
       this.verticalCoreGroup.visible = false;
     } else {
       this.verticalCoreGroup.visible = true;
