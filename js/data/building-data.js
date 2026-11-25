@@ -195,16 +195,20 @@ export const ENHANCED_ROOM_DB = [
   // ════════════════════════════════════════════════════════════════
   // GROUND FLOOR (G) — SVG: floors/ground-floor.svg
   // ════════════════════════════════════════════════════════════════
-  r('main-entrance', 'Entrance', 'Main Entrance (Market Plaza)', 'G', 'facility',
+  r('main-entrance', 'Main Entrance', 'Main Entrance', 'G', 'facility',
+    [-16.0, -18.0, -11.0, -11.5], [-11.0, -14.75],
+    { svgLabel: 'Main Entrance', aliases: ['main entrance', 'entrance', 'main gate', 'lobby', 'start'], anchor: '../floors/floor-g.html',
+      verificationStatus: 'verified-svg',
+      directionsText: 'Main Victoria University entrance on the Left (West) side of the Ground Floor near the Marketing Office and Reception lobby.' }),
+  r('ground-exit', 'Exit', 'Exit', 'G', 'facility',
     [3.5, 22.0, 8.5, 27.0], [6.0, 24.5],
-    { svgLabel: 'Main Entrance', aliases: ['entrance', 'main gate', 'lobby', 'start'], anchor: '../index.html',
-      verificationStatus: 'estimated-from-directions',
-      verificationNote: 'South Ground Floor main entrance foyer leading north toward Reception as described in directions.html.',
-      directionsText: 'Main Victoria University entrance at Ground Floor, Market Plaza Tower.' }),
+    { svgLabel: 'Exit', aliases: ['exit', 'ground exit', 'building exit', 'way out', 'south exit'], anchor: '../floors/floor-g.html',
+      verificationStatus: 'verified-svg',
+      directionsText: 'Ground Floor Exit located at the South-East corridor near the Art Gallery and Ground Floor Pharmacy.' }),
   r('reception', 'Reception', 'Reception', 'G', 'facility',
     [-1.8, -18.5, 3.6, -11.0], [-1.8, -14.75],
     { svgLabel: 'Reception', aliases: ['main reception', 'helpdesk', 'front desk'], image: 'images/reception.jpeg',
-      directionsText: 'From the main entrance, walk straight ahead into the open lobby towards the Reception desk on your right.' }),
+      directionsText: 'From the main entrance on the left side, walk straight ahead into the open lobby towards the Reception desk.' }),
   r('art-gallery', 'G01', 'Art Gallery', 'G', 'social',
     [10.0, 5.0, 16.0, 27.0], [10.0, 14.37],
     { svgLabel: 'Art Gallery', aliases: ['g01', 'gallery'], image: 'images/art-gallery.jpeg',
@@ -216,7 +220,7 @@ export const ENHANCED_ROOM_DB = [
   r('marketing-office', 'G03', 'Marketing Office', 'G', 'office',
     [-16.0, -9.0, -10.0, 27.0], [-10.0, 3.30],
     { svgLabel: 'Marketing office', aliases: ['g03', 'marketing'], image: 'images/marketing-office.jpeg',
-      directionsText: 'Right corridor from entrance, or first room near main entrance.' }),
+      directionsText: 'Right corridor from Main Entrance, or first room near Main Entrance.' }),
   r('cooperative-education-office', 'G04', 'Co-operative Education Office (CEO)', 'G', 'office',
     [-6.0, -5.0, -2.0, 9.0], [-3.56, -5.0],
     { svgLabel: 'Co-operative Education', aliases: ['g04', 'ceo', 'co-operative education'], image: 'images/co-operative-education-office(C.E.O).jpeg',
@@ -236,7 +240,11 @@ export const ENHANCED_ROOM_DB = [
   r('g-pharmacy', 'G-Pharm', 'Ground Floor Pharmacy', 'G', 'medical',
     [-6.0, 19.0, 2.0, 27.0], [2.0, 21.23],
     { svgLabel: 'Pharmacy', aliases: ['ground pharmacy', 'chemist'], anchor: '../floors/floor-g.html',
-      directionsText: 'South end of the Ground Floor central block near the main entrance.' }),
+      directionsText: 'South end of the Ground Floor central block near the exit.' }),
+  r('restroom-g', 'Restroom', 'Ground Floor Restrooms (Toilets)', 'G', 'facility',
+    [10.0, -21.0, 16.0, -13.0], [10.0, -19.21],
+    { svgLabel: 'MensToilets', aliases: ['restroom', 'restrooms', 'toilet', 'toilets', 'washroom', 'washrooms', 'mens toilets', 'ground floor restroom'], anchor: '../floors/floor-g.html',
+      directionsText: 'Ground Floor restrooms located on the North-East corridor past Reception.' }),
 
   // ════════════════════════════════════════════════════════════════
   // FLOOR 1 — SVG: floors/floor-1-map.svg
@@ -362,6 +370,10 @@ export const ENHANCED_ROOM_DB = [
     [0.0, 21.0, 4.0, 27.0], [4.02, 22.56],
     { svgLabel: 'B.r3', aliases: ['boardroom 3', 'board room 3', 'room 209', '209'], image: 'images/boardroom-3.jpeg',
       directionsText: 'Take the elevator to Floor 1, left corridor to the extreme end.' }),
+  r('restroom-1', 'Restroom', 'Floor 1 Restrooms (Toilets)', '1', 'facility',
+    [10.0, -27.0, 16.0, -17.0], [10.0, -18.37],
+    { svgLabel: 'ladiesToilets / MensToilets', aliases: ['restroom', 'restrooms', 'toilet', 'toilets', 'washroom', 'washrooms', 'ladies toilets', 'mens toilets', 'floor 1 restroom'], anchor: '../floors/floor-1.html',
+      directionsText: 'Floor 1 Men’s and Ladies’ Restrooms located in the North-East wing near the elevators.' }),
 
   // ════════════════════════════════════════════════════════════════
   // FLOOR 2 — SVG: floors/floor-2-map.svg
@@ -400,6 +412,10 @@ export const ENHANCED_ROOM_DB = [
       verificationStatus: 'requires-physical-verification',
       verificationNote: 'Mapped to the partitioned south-west cell (door D4 at (-13.22, 25.59)) in floor-2-map.svg; SVG has no "210" text label (shows "202" at (-14.61, 23.40)).',
       directionsText: 'Floor 2 Storage Room (location requires physical verification on Floor 2).' }),
+  r('restroom-2', 'Restroom', 'Floor 2 Restrooms (Toilets)', '2', 'facility',
+    [13.22, -24.81, 16.0, -14.01], [13.22, -16.20],
+    { svgLabel: 'Toilets', aliases: ['restroom', 'restrooms', 'toilet', 'toilets', 'washroom', 'washrooms', 'floor 2 restroom'], anchor: '../floors/floor-2.html',
+      directionsText: 'Floor 2 Restrooms located in the North-East corner past Room 203.' }),
 
   // ════════════════════════════════════════════════════════════════
   // FLOOR 3 — SVG: floors/floor-3-map.svg
@@ -478,6 +494,10 @@ export const ENHANCED_ROOM_DB = [
     [-16.0, -2.28, -1.86, 19.07], [-1.86, -0.10],
     { svgLabel: 'Engineering and Graphics', aliases: ['503', 'engineering', 'graphics design'], image: 'images/ENGINEERING-&-GRAPHICS-DESIGN.jpg',
       directionsText: 'Take the elevator to Floor 5, exit and walk straight ahead. 503 is the last room on the right.' }),
+  r('restroom-5', 'Restroom', 'Floor 5 Restrooms (Toilets)', '5', 'facility',
+    [11.67, -26.84, 16.0, -15.85], [11.54, -21.76],
+    { svgLabel: 'Toilets', aliases: ['restroom', 'restrooms', 'toilet', 'toilets', 'washroom', 'washrooms', 'floor 5 restroom'], anchor: '../floors/floor-5.html',
+      directionsText: 'Floor 5 Restrooms located in the North-East corner near the elevators and staircases.' }),
 
   // ════════════════════════════════════════════════════════════════
   // FLOOR 6 — SVG: floors/floor-6-map.svg
@@ -527,6 +547,10 @@ export const ENHANCED_ROOM_DB = [
     [8.0, 21.60, 16.0, 25.20], [8.0, 23.40],
     { svgLabel: '60-06', aliases: ['6-06', '60-06', '60-6', '606'], image: 'images/6-06.jpeg',
       directionsText: 'Take the elevator to Floor 6, exit and walk to the far end of the left corridor.' }),
+  r('restroom-6', 'Restroom', 'Floor 6 Restrooms (Washrooms)', '6', 'facility',
+    [9.60, -26.90, 16.0, -16.20], [9.60, -18.04],
+    { svgLabel: 'WASH', aliases: ['restroom', 'restrooms', 'toilet', 'toilets', 'washroom', 'washrooms', 'wash', 'floor 6 restroom'], anchor: '../floors/floor-6.html',
+      directionsText: 'Floor 6 Restrooms / Washrooms located in the North-East wing near the elevators.' }),
 
   // ════════════════════════════════════════════════════════════════
   // FLOOR 7 — SVG: floors/floor-7-map.svg
@@ -581,6 +605,10 @@ export const ENHANCED_ROOM_DB = [
     [12.0, 15.54, 16.0, 27.0], [12.0, 16.68],
     { svgLabel: 'Office of dean', aliases: ['office of the dean', 'law dean'], image: 'images/OFFICE-OF-THE-DEAN.jpg',
       directionsText: 'Walk past the corridor then turn left at the south end.' }),
+  r('restroom-7', 'Restroom', 'Floor 7 Restrooms (Toilets)', '7', 'facility',
+    [10.67, -27.0, 16.0, -17.18], [10.67, -19.54],
+    { svgLabel: 'Rest rooms', aliases: ['restroom', 'restrooms', 'toilet', 'toilets', 'washroom', 'washrooms', 'rest rooms', 'floor 7 restroom'], anchor: '../floors/floor-7.html',
+      directionsText: 'Floor 7 Restrooms located in the North-East corner near the elevators and H.O.D Film Production.' }),
 
   // ════════════════════════════════════════════════════════════════
   // FLOOR 8 — SVG: floors/floor-8-map.svg
@@ -629,6 +657,10 @@ export const ENHANCED_ROOM_DB = [
     [-5.33, 21.41, 1.78, 27.0], [-5.33, 23.01],
     { svgLabel: 'vice chancellors coordination office', aliases: ['vice chancellor', 'vc office'], image: 'images/VICE-CHANCELLOR_S-COORDINATION-OFFICE.jpg',
       directionsText: 'At the south end of the central corridor.' }),
+  r('restroom-8', 'Restroom', 'Floor 8 Restrooms (Toilets)', '8', 'facility',
+    [8.89, -26.91, 16.0, -12.10], [8.89, -20.93],
+    { svgLabel: 'LadiesToilets / MEN Toilets', aliases: ['restroom', 'restrooms', 'toilet', 'toilets', 'washroom', 'washrooms', 'ladies toilets', 'men toilets', 'floor 8 restroom'], anchor: '../floors/floor-8.html',
+      directionsText: 'Floor 8 Men’s and Ladies’ Restrooms located in the North-East wing near the elevators.' }),
 
   // ════════════════════════════════════════════════════════════════
   // FLOOR 9 — SVG: floors/floor-9-map.svg
@@ -679,6 +711,10 @@ export const ENHANCED_ROOM_DB = [
       verificationStatus: 'estimated-from-directions',
       verificationNote: 'Mapped to the south end of the east room block (adjacent to Meeting Room 1) on Floor 9.',
       directionsText: 'Take the elevator to Floor 9, exit the lift and walk down the left corridor past Meeting Room 1.' }),
+  r('restroom-9', 'Restroom', 'Floor 9 Restrooms (Toilets)', '9', 'facility',
+    [8.0, -27.0, 16.0, -22.68], [8.0, -25.20],
+    { svgLabel: 'Womens Toilets / Mens Toilets', aliases: ['restroom', 'restrooms', 'toilet', 'toilets', 'washroom', 'washrooms', 'womens toilets', 'mens toilets', 'floor 9 restroom'], anchor: '../floors/floor-9.html',
+      directionsText: 'Floor 9 Men’s and Women’s Restrooms located in the North-East wing near the elevators and Law Society Office.' }),
 ];
 
 export const ROOM_BY_ID = new Map();

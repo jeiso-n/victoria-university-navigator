@@ -251,8 +251,22 @@ function createFloorBadgeSprite(floorCode) {
 
   const texture = new THREE.CanvasTexture(canvas);
   texture.minFilter = THREE.LinearFilter;
-  const sprite = new THREE.Sprite(new THREE.SpriteMaterial({ map: texture, transparent: true }));
+  const sprite = new THREE.Sprite(
+    new THREE.SpriteMaterial({
+      map: texture,
+      transparent: true,
+      depthTest: false,
+      depthWrite: false,
+    })
+  );
+  sprite.renderOrder = 22;
   sprite.scale.set(6.2, 1.54, 1);
+  sprite.name = `floor-badge-${floorCode}`;
+  sprite.userData = {
+    isFloorBadge: true,
+    floorCode,
+    labelText: formatFloorLabel(floorCode),
+  };
   return sprite;
 }
 
@@ -306,7 +320,10 @@ export function buildFloorGroup(floorDef, floorGeom) {
     const isExt = isExteriorWall(wall);
     const subSegs = isExt
       ? (floorDef.code === 'G'
-          ? splitWallAtDoors(wall, [{ cx: 6.0, cz: 27, width: 4.5, orient: 'H' }])
+          ? splitWallAtDoors(wall, [
+              { cx: -16.0, cz: -14.75, width: 4.5, orient: 'V' },
+              { cx: 6.0, cz: 27.0, width: 4.5, orient: 'H' },
+            ])
           : [wall])
       : splitWallAtDoors(wall, doors);
 
@@ -376,39 +393,65 @@ export function buildFloorGroup(floorDef, floorGeom) {
     group.add(doorGroup);
   }
 
-  // Ground Floor Main Entrance Portal (South-East foyer at X=+6, Z=+27)
+  // Ground Floor Main Entrance (Left/West side near Marketing Office at X=-16, Z=-14.75)
+  // and Exit Portal (old South-East entrance position at X=+6, Z=+27)
   if (floorDef.code === 'G') {
-    const portalGroup = new THREE.Group();
-    portalGroup.position.set(6.0, 0, 27.0);
-    const canopy = new THREE.Mesh(
-      new THREE.BoxGeometry(7.2, 0.28, 3.2),
+    const entrancePortal = new THREE.Group();
+    entrancePortal.name = 'main-entrance-portal';
+    entrancePortal.position.set(-16.0, 0, -14.75);
+    entrancePortal.userData = { isMainEntrancePortal: true, labelText: 'Main Entrance' };
+    const entCanopy = new THREE.Mesh(
+      new THREE.BoxGeometry(3.2, 0.28, 6.8),
       new THREE.MeshStandardMaterial({ color: 0x1b365d, roughness: 0.4, metalness: 0.4 })
     );
-    canopy.position.set(0, 3.3, 1.6);
-    const matWelcome = new THREE.Mesh(
-      new THREE.BoxGeometry(5.0, 0.05, 3.4),
+    entCanopy.position.set(-1.6, 3.3, 0);
+    const entMatWelcome = new THREE.Mesh(
+      new THREE.BoxGeometry(3.4, 0.05, 4.8),
       new THREE.MeshStandardMaterial({ color: 0x059669, roughness: 0.7 })
     );
-    matWelcome.position.set(0, 0.03, 0.6);
-    const entranceSprite = createLabelSprite('MAIN ENTRANCE', 'Market Plaza · Ground Floor', '#059669');
-    entranceSprite.position.set(0, 4.1, 2.0);
+    entMatWelcome.position.set(-0.6, 0.03, 0);
+    const entranceSprite = createLabelSprite('Main Entrance', 'Ground Floor · Near Marketing Office', '#059669');
+    entranceSprite.position.set(-2.0, 4.1, 0);
     labelSprites.push(entranceSprite);
-    portalGroup.add(canopy, matWelcome, entranceSprite);
-    group.add(portalGroup);
+    entrancePortal.add(entCanopy, entMatWelcome, entranceSprite);
+    group.add(entrancePortal);
+
+    const exitPortal = new THREE.Group();
+    exitPortal.name = 'ground-exit-portal';
+    exitPortal.position.set(6.0, 0, 27.0);
+    exitPortal.userData = { isExitPortal: true, labelText: 'Exit' };
+    const exitCanopy = new THREE.Mesh(
+      new THREE.BoxGeometry(6.8, 0.28, 3.2),
+      new THREE.MeshStandardMaterial({ color: 0x334155, roughness: 0.45, metalness: 0.35 })
+    );
+    exitCanopy.position.set(0, 3.3, 1.6);
+    const exitThreshold = new THREE.Mesh(
+      new THREE.BoxGeometry(4.8, 0.05, 3.4),
+      new THREE.MeshStandardMaterial({ color: 0xe11d48, roughness: 0.7 })
+    );
+    exitThreshold.position.set(0, 0.03, 0.6);
+    const exitSprite = createLabelSprite('Exit', 'Ground Floor · Near Art Gallery', '#e11d48');
+    exitSprite.position.set(0, 4.1, 2.0);
+    labelSprites.push(exitSprite);
+    exitPortal.add(exitCanopy, exitThreshold, exitSprite);
+    group.add(exitPortal);
   }
 
   // 4. Toilets / Washrooms from SVG green polygons
+  const floorRestrooms = ENHANCED_ROOM_DB.filter(rm => rm.floor === floorDef.code && rm.id.startsWith('restroom-'));
   for (const [x1, z1, x2, z2] of floorGeom.toilets || []) {
     const w = Math.max(0.8, x2 - x1);
     const d = Math.max(0.8, z2 - z1);
     const plate = new THREE.Mesh(new THREE.BoxGeometry(w - 0.2, 0.06, d - 0.2), sharedMaterials.toiletFloor);
     plate.position.set((x1 + x2) / 2, 0.03, (z1 + z2) / 2);
     group.add(plate);
-    const sp = createLabelSprite('Washrooms', 'Restrooms', '#059669');
-    sp.position.set((x1 + x2) / 2, 2.35, (z1 + z2) / 2);
-    sp.scale.set(3.2, 1.0, 1);
-    labelSprites.push(sp);
-    group.add(sp);
+    if (!floorRestrooms.length) {
+      const sp = createLabelSprite('🚻 Restrooms', 'Washrooms', '#059669');
+      sp.position.set((x1 + x2) / 2, 2.35, (z1 + z2) / 2);
+      sp.scale.set(3.2, 1.0, 1);
+      labelSprites.push(sp);
+      group.add(sp);
+    }
   }
 
   // 5. Central Dual-Elevator Core & Physically Attached Directional Staircases (Right = UP, Left = DOWN)
@@ -892,12 +935,18 @@ export function buildFloorGroup(floorDef, floorGeom) {
     const cx = (rx1 + rx2) / 2;
     const cz = (rz1 + rz2) / 2;
 
-    const baseColor = CATEGORY_COLORS[rm.category] || 0x00a0df;
+    const isRestroom = rm.id.startsWith('restroom-');
+    const isExit = rm.id === 'ground-exit';
+    const baseColor = isRestroom
+      ? 0x10b981
+      : isExit
+        ? 0xe11d48
+        : (CATEGORY_COLORS[rm.category] || 0x00a0df);
     const roomPlateGeo = new THREE.BoxGeometry(rw, 0.09, rd);
     const roomPlateMat = new THREE.MeshStandardMaterial({
       color: baseColor,
       transparent: true,
-      opacity: rm.verificationStatus === 'under-construction' ? 0.35 : 0.26,
+      opacity: rm.verificationStatus === 'under-construction' ? 0.35 : (isRestroom ? 0.34 : 0.26),
       roughness: 0.65,
     });
     const roomPlate = new THREE.Mesh(roomPlateGeo, roomPlateMat);
@@ -925,8 +974,12 @@ export function buildFloorGroup(floorDef, floorGeom) {
 
     // Room floating label
     const accentHex = `#${baseColor.toString(16).padStart(6, '0')}`;
-    const labelTitle = rm.room && rm.room !== '—' ? `${rm.room}` : rm.name;
-    const labelSub = rm.room && rm.room !== '—' && rm.name !== rm.room ? rm.name : fullFloorName;
+    const labelTitle = isRestroom
+      ? '🚻 Restrooms'
+      : (rm.room && rm.room !== '—' ? `${rm.room}` : rm.name);
+    const labelSub = isRestroom
+      ? rm.name
+      : (rm.room && rm.room !== '—' && rm.name !== rm.room ? rm.name : fullFloorName);
     const sprite = createLabelSprite(labelTitle, labelSub, accentHex);
     sprite.position.set(cx, 2.25, cz);
     if (rw < 4.5 || rd < 4.5) {
@@ -955,10 +1008,10 @@ export function buildFloorGroup(floorDef, floorGeom) {
     group.add(sp);
   }
 
-  // 8. Exterior Floor Level Badge (West side for clear multistorey identification)
+  // 8. Exterior Full Floor Level Badge positioned in the foreground South-East zone indicated in d2.png
   const badge = createFloorBadgeSprite(floorDef.code);
-  badge.position.set(-BUILDING_WIDTH / 2 - 2.6, 1.5, -BUILDING_DEPTH / 2 + 3.0);
+  badge.position.set(BUILDING_WIDTH / 2 + 3.2, 1.15, BUILDING_DEPTH / 2 - 8.5);
   group.add(badge);
 
-  return { group, roomMeshes, labelSprites, exteriorGroup };
+  return { group, roomMeshes, labelSprites, exteriorGroup, floorBadge: badge };
 }

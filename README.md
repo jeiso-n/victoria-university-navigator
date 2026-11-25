@@ -13,7 +13,7 @@ A responsive, static 2D + 3D indoor campus-navigation website for **Victoria Uni
   - `Isolate Floor` (focus single floor `Basement 2`–`Floor 9`)
   - `Exploded` (vertically expanded stack showing floor relationships)
   - `Map View` / `Perspective` camera views + smooth fly-to transitions
-- **Shared Room Search & Verification Metadata:** Searches 129 mapped rooms, laboratories, offices, and facilities across `ROOM_DB` / `ENHANCED_ROOM_DB` with aliases and typo tolerance, displaying SVG verification badges (`SVG Verified`, `Location Estimated / Verify On-Site`, `Under Renovation`).
+- **Shared Room & Restroom Search + Verification Metadata:** Searches 138 mapped rooms, restrooms/toilets/washrooms, laboratories, offices, and facilities (including Left-Side `Main Entrance` and South-East `Exit`) across `ROOM_DB` / `ENHANCED_ROOM_DB` with aliases and typo tolerance, displaying SVG verification badges (`SVG Verified`, `Location Estimated / Verify On-Site`, `Under Renovation`).
 - **Real Multi-Floor Indoor Pathfinding (A\*):**
   - Calculates walkable corridor routes avoiding solid walls, attaching doorways to walkable floor spines.
   - Supports both **Elevator** and **Stairs** vertical routing across consecutive levels.

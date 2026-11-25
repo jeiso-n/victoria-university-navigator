@@ -3544,6 +3544,7 @@ body.dark-mode header {
   background-color: #1a2b4c !important;
   border-color: #38507e !important;
   color: #f8fafc !important;
+  transition: none !important;
 }
 
 [data-theme="dark"] #roomSelect option,
@@ -3627,7 +3628,7 @@ body.dark-mode header {
 }
 
 [data-theme="dark"] .guide-office-card:hover,
-[data-theme="dark"] .guide-list > a:hover,
+[data-theme="dark"] .guide-list>a:hover,
 [data-theme="dark"] .index-list a:hover,
 [data-theme="dark"] .floor-index a:hover {
   background-color: #1e3056 !important;

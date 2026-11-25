@@ -331,7 +331,7 @@ async function run() {
 
       assert.equal(info.is3DActive, true);
       assert.equal(info.floorsCount, 12);
-      assert.equal(info.roomsCount, 129);
+      assert.equal(info.roomsCount, 138);
       assert.ok(info.canvasWidth > 0 && info.canvasHeight > 0, `Canvas has zero pixel dimensions: ${JSON.stringify(info)}`);
       assert.ok(info.clientWidth > 0 && info.clientHeight > 0, `Canvas has zero layout dimensions: ${JSON.stringify(info)}`);
       assertNoBrowserErrors('3D initialization');
@@ -508,7 +508,151 @@ async function run() {
       // Switch explicitly to Isolate Floor mode and test Ground Floor + Basements B2 & B1 + all 12 levels
       await cdp.eval("document.querySelector('.vu3d-view-btn[data-view=\"isolated\"]').click()");
       await cdp.eval("document.querySelector('.vu3d-floor-pill[data-floor=\"G\"]').click()");
-      await snap('verify_ground_reception.png');
+      await cdp.eval("document.getElementById('vu3d-btn-reset').click()");
+      await snap('verify_ground_floor_d2_entrance_exit_label.png');
+
+      // Verify Ground Floor Main Entrance (Left side near Marketing Office), Exit (South-East), and d2.png Floor Label position + Reset View visibility
+      const groundAndLabelAudit = await cdp.eval(`(() => {
+        const nav = window.__VU_NAVIGATOR__;
+        const sm = nav.sceneManager;
+        const gFloor = sm.building.floors.get('G');
+        let entPortal = null;
+        let exitPortal = null;
+        gFloor.group.traverse(o => {
+          if (o.userData?.isMainEntrancePortal) entPortal = { x: o.position.x, z: o.position.z, label: o.userData.labelText };
+          if (o.userData?.isExitPortal) exitPortal = { x: o.position.x, z: o.position.z, label: o.userData.labelText };
+        });
+
+        // Project Ground Floor badge in current Reset View (Isolate Floor) camera
+        sm.camera.updateMatrixWorld();
+        const gBadge = gFloor.floorBadge;
+        const gWorld = gBadge.getWorldPosition(gBadge.position.clone());
+        const gNdc = gWorld.clone().project(sm.camera);
+
+        // Verify all 12 floor badges have full names and sit at the d2.png South-East foreground position (x=19.4, z=22.5)
+        const badges = [];
+        for (const [code, f] of sm.building.floors.entries()) {
+          const b = f.floorBadge;
+          badges.push({
+            code,
+            label: b?.userData?.labelText,
+            x: b?.position.x,
+            y: b?.position.y,
+            z: b?.position.z,
+          });
+        }
+        return { entPortal, exitPortal, gNdc: { x: gNdc.x, y: gNdc.y, z: gNdc.z }, badges };
+      })()`);
+      assert.deepEqual(groundAndLabelAudit.entPortal, { x: -16, z: -14.75, label: 'Main Entrance' });
+      assert.deepEqual(groundAndLabelAudit.exitPortal, { x: 6, z: 27, label: 'Exit' });
+      assert.ok(
+        Math.abs(groundAndLabelAudit.gNdc.x) < 0.85 && Math.abs(groundAndLabelAudit.gNdc.y) < 0.85 && groundAndLabelAudit.gNdc.z < 1,
+        `Ground Floor label out of viewport after Reset View: ${JSON.stringify(groundAndLabelAudit.gNdc)}`
+      );
+      assert.equal(groundAndLabelAudit.badges.length, 12);
+      assert.ok(groundAndLabelAudit.badges.every(b => Math.abs(b.x - 19.2) < 0.1 && Math.abs(b.z - 18.5) < 0.1 && b.label && b.label.length >= 6));
+
+      // Verify Map View camera preset matches map.png overhead framing & orientation, and Reset View restores default 3D perspective independently
+      await cdp.eval("document.getElementById('vu3d-btn-topdown').click()");
+      await snap('verify_ground_floor_map_view.png');
+      const mapViewCamera = await cdp.eval(`(() => {
+        const nav = window.__VU_NAVIGATOR__;
+        const sm = nav.sceneManager;
+        const cc = sm.cameraController;
+        const gBadge = sm.building.floors.get('G').floorBadge;
+        const gWorld = gBadge.getWorldPosition(gBadge.position.clone());
+        const gNdc = gWorld.clone().project(sm.camera);
+        return {
+          topDown: nav.topDown,
+          btnActive: document.getElementById('vu3d-btn-topdown').classList.contains('active'),
+          camX: Number(sm.camera.position.x.toFixed(2)),
+          camY: Number(sm.camera.position.y.toFixed(2)),
+          camZ: Number(sm.camera.position.z.toFixed(2)),
+          targetX: Number(cc.controls.target.x.toFixed(2)),
+          targetZ: Number(cc.controls.target.z.toFixed(2)),
+          badgeInView: Math.abs(gNdc.x) < 0.92 && Math.abs(gNdc.y) < 0.92,
+        };
+      })()`);
+      assert.equal(mapViewCamera.topDown, true);
+      assert.equal(mapViewCamera.btnActive, true);
+      assert.equal(mapViewCamera.camX, 0);
+      assert.ok(mapViewCamera.camY >= 86 && mapViewCamera.camY <= 90, `Unexpected Map View height: ${JSON.stringify(mapViewCamera)}`);
+      assert.ok(mapViewCamera.camZ >= 4.0 && mapViewCamera.camZ <= 6.0, `Unexpected Map View Z tilt: ${JSON.stringify(mapViewCamera)}`);
+      assert.equal(mapViewCamera.badgeInView, true, `Floor badge must remain visible in Map View: ${JSON.stringify(mapViewCamera)}`);
+
+      // Click Reset View and confirm it restores the separate default 3D perspective camera preset while keeping selected destination
+      await cdp.eval("document.getElementById('vu3d-btn-reset').click()");
+      await new Promise(r => setTimeout(r, 850));
+      const afterResetView = await cdp.eval(`(() => {
+        const nav = window.__VU_NAVIGATOR__;
+        const sm = nav.sceneManager;
+        return {
+          topDown: nav.topDown,
+          btnActive: document.getElementById('vu3d-btn-topdown').classList.contains('active'),
+          camX: Number(sm.camera.position.x.toFixed(1)),
+          camY: Number(sm.camera.position.y.toFixed(1)),
+          camZ: Number(sm.camera.position.z.toFixed(1)),
+          selectedId: nav.selectedRoom?.id,
+        };
+      })()`);
+      assert.equal(afterResetView.topDown, false);
+      assert.equal(afterResetView.btnActive, false);
+      assert.equal(afterResetView.camX, 39);
+      assert.equal(afterResetView.camY, 32);
+      assert.equal(afterResetView.camZ, 50);
+      assert.equal(afterResetView.selectedId, 'room-305');
+
+      // Also check Full Building Reset View projects all 12 floor badges inside the viewport
+      await cdp.eval("document.querySelector('.vu3d-view-btn[data-view=\"building\"]').click()");
+      await cdp.eval("document.getElementById('vu3d-btn-reset').click()");
+      await snap('verify_full_building_reset_labels.png');
+      const fullBuildingBadgesInView = await cdp.eval(`(() => {
+        const sm = window.__VU_NAVIGATOR__.sceneManager;
+        sm.camera.updateMatrixWorld();
+        const out = [];
+        for (const [code, f] of sm.building.floors.entries()) {
+          const w = f.floorBadge.getWorldPosition(f.floorBadge.position.clone());
+          const ndc = w.project(sm.camera);
+          out.push({ code, x: ndc.x, y: ndc.y, z: ndc.z, ok: Math.abs(ndc.x) < 0.92 && Math.abs(ndc.y) < 0.92 && ndc.z < 1 });
+        }
+        return out;
+      })()`);
+      assert.ok(fullBuildingBadgesInView.every(b => b.ok), `Some floor badges clipped in Full Building Reset View: ${JSON.stringify(fullBuildingBadgesInView)}`);
+
+      // Test Restroom / Toilet / Washroom search in 3D sidebar, selection, pinning & cross-floor route arrows
+      const restroomSearchCheck = await cdp.eval(`(() => {
+        const input = document.getElementById('vu3d-search-input');
+        const counts = {};
+        for (const q of ['Restroom', 'Toilet', 'Toilets', 'Washroom']) {
+          input.value = q;
+          input.dispatchEvent(new Event('input', { bubbles: true }));
+          counts[q] = document.querySelectorAll('#vu3d-search-results .vu3d-result-item').length;
+        }
+        // Click Floor 6 Restrooms from the search results
+        const f6Btn = document.querySelector('#vu3d-search-results .vu3d-result-item[data-room-id="restroom-6"]');
+        if (f6Btn) f6Btn.click();
+        return {
+          counts,
+          selectedId: window.__VU_NAVIGATOR__.selectedRoom?.id,
+          activeFloor: window.__VU_NAVIGATOR__.activeFloor,
+          pinVisible: window.__VU_NAVIGATOR__.sceneManager.roomManager.highlightGroup.visible,
+          routeDest: window.__VU_NAVIGATOR__.currentRoute?.destRoom?.id,
+          arrowCount: window.__VU_NAVIGATOR__.sceneManager.routeRenderer.arrowMeshes.length,
+        };
+      })()`);
+      assert.equal(restroomSearchCheck.counts.Restroom, 8);
+      assert.equal(restroomSearchCheck.counts.Toilet, 8);
+      assert.equal(restroomSearchCheck.counts.Toilets, 8);
+      assert.equal(restroomSearchCheck.counts.Washroom, 8);
+      assert.equal(restroomSearchCheck.selectedId, 'restroom-6');
+      assert.equal(restroomSearchCheck.activeFloor, '6');
+      assert.equal(restroomSearchCheck.pinVisible, true);
+      assert.equal(restroomSearchCheck.routeDest, 'restroom-6');
+      assert.ok(restroomSearchCheck.arrowCount >= 5);
+      await snap('verify_restroom_search_and_pin.png');
+
+      // Re-select room-305 before the Basement B2/B1 isolation and Floor 3 pin-persistence check below
+      await cdp.eval("window.__VU_NAVIGATOR__.handleSelectRoom(window.__VU_NAVIGATOR__.sceneManager.building.roomMeshById.get('room-305').userData.roomData, true)");
 
       // 3. Test Basement 2 & Basement 1 isolation hides Ground Plaza and all upper floors cleanly
       await cdp.eval("document.querySelector('.vu3d-floor-pill[data-floor=\"B2\"]').click()");

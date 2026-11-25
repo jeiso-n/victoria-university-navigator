@@ -354,7 +354,7 @@ class NavigatorController {
           <div class="vu3d-panel-section">
             <label class="vu3d-label" for="vu3d-search-input">Search Destination</label>
             <div class="vu3d-search-box">
-              <input type="search" id="vu3d-search-input" placeholder="Room code, name, lab, office…" autocomplete="off" spellcheck="false">
+              <input type="search" id="vu3d-search-input" placeholder="Room code, name, restroom, lab, office…" autocomplete="off" spellcheck="false">
               <button type="button" class="vu3d-clear-search" id="vu3d-clear-search" title="Clear search">&times;</button>
             </div>
             <div class="vu3d-search-results" id="vu3d-search-results"></div>
@@ -468,21 +468,24 @@ class NavigatorController {
 
     el.querySelector('#vu3d-btn-topdown').addEventListener('click', () => {
       if (!this.sceneManager) return;
-      this.topDown = !this.topDown;
-      if (this.topDown && this.viewMode === 'building') {
+      this.topDown = true;
+      if (this.viewMode === 'building' || this.viewMode === 'exploded') {
         this.viewMode = 'isolated';
         this.setFloorAndView(this.activeFloor, 'isolated');
+      } else {
+        this.sceneManager.cameraController.setMapView(this.activeFloor);
       }
-      this.sceneManager.cameraController.flyToFloor(this.activeFloor, this.topDown);
-      el.querySelector('#vu3d-btn-topdown').classList.toggle('active', this.topDown);
+      el.querySelector('#vu3d-btn-topdown').classList.add('active');
     });
 
     el.querySelector('#vu3d-btn-reset').addEventListener('click', () => {
       if (!this.sceneManager) return;
       this.topDown = false;
       el.querySelector('#vu3d-btn-topdown').classList.remove('active');
-      if (this.viewMode === 'building' || this.viewMode === 'exploded') {
+      if (this.viewMode === 'building') {
         this.sceneManager.cameraController.setBuildingOverview();
+      } else if (this.viewMode === 'exploded') {
+        this.sceneManager.cameraController.setExplodedOverview();
       } else {
         this.sceneManager.cameraController.flyToFloor(this.activeFloor, false);
       }
@@ -616,8 +619,12 @@ class NavigatorController {
     }
 
     if (this.sceneManager) {
-      if (viewMode === 'building' || viewMode === 'exploded') {
+      if (viewMode === 'building') {
         this.sceneManager.setViewMode(viewMode, floorCode);
+        this.sceneManager.cameraController.setBuildingOverview();
+      } else if (viewMode === 'exploded') {
+        this.sceneManager.setViewMode(viewMode, floorCode);
+        this.sceneManager.cameraController.setExplodedOverview();
       } else {
         this.sceneManager.focusFloor(floorCode, viewMode, this.topDown);
       }
@@ -636,7 +643,7 @@ class NavigatorController {
       box.innerHTML = '';
       return;
     }
-    const matches = searchRooms(q).slice(0, 10);
+    const matches = searchRooms(q).slice(0, 15);
     if (!matches.length) {
       box.innerHTML = '<div class="vu3d-no-results">No matching rooms found.</div>';
       return;

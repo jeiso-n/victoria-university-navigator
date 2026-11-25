@@ -124,14 +124,23 @@ export class BuildingGenerator {
     this.plazaMesh = plaza;
     this.groundPlazaGroup.add(plaza);
 
-    // Front approach walkway leading to Main Entrance (South side Z = +27..+40)
-    const walkway = new THREE.Mesh(
-      new THREE.BoxGeometry(10, 0.06, 14),
-      new THREE.MeshStandardMaterial({ color: 0xcbd5e1, roughness: 0.85 })
+    // West approach walkway leading to Main Entrance on Left Side (X = -16..-28, Z = -14.75)
+    const walkwayMat = new THREE.MeshStandardMaterial({ color: 0xcbd5e1, roughness: 0.85 });
+    const mainWalkway = new THREE.Mesh(
+      new THREE.BoxGeometry(12, 0.06, 8),
+      walkwayMat
     );
-    walkway.position.set(6.0, -0.28, BUILDING_DEPTH / 2 + 7);
-    this.walkwayMesh = walkway;
-    this.groundPlazaGroup.add(walkway);
+    mainWalkway.position.set(-BUILDING_WIDTH / 2 - 6, -0.28, -14.75);
+    this.walkwayMesh = mainWalkway;
+    this.groundPlazaGroup.add(mainWalkway);
+
+    // South walkway leading from Exit (X = +6.0, Z = +27..+38)
+    const exitWalkway = new THREE.Mesh(
+      new THREE.BoxGeometry(9, 0.06, 11),
+      walkwayMat
+    );
+    exitWalkway.position.set(6.0, -0.28, BUILDING_DEPTH / 2 + 5.5);
+    this.groundPlazaGroup.add(exitWalkway);
   }
 
   getFloorY(floorCode) {

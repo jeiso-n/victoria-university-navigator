@@ -14,7 +14,7 @@ export class CameraController {
     this.controls = new OrbitControls(camera, domElement);
     this.controls.enableDamping = true;
     this.controls.dampingFactor = 0.08;
-    this.controls.maxDistance = 155;
+    this.controls.maxDistance = 210;
     this.controls.minDistance = 7;
     this.controls.maxPolarAngle = Math.PI * 0.49;
 
@@ -52,17 +52,32 @@ export class CameraController {
   }
 
   setBuildingOverview(instant = false) {
-    const target = new THREE.Vector3(0, 14, 0);
-    const pos = new THREE.Vector3(48, 42, 62);
+    const target = new THREE.Vector3(0, 13.5, 0);
+    const pos = new THREE.Vector3(62, 48, 82);
     this.transitionTo(pos, target, 0.85, instant);
   }
 
-  flyToFloor(floorCode, topDown = false) {
+  setExplodedOverview(instant = false) {
+    const target = new THREE.Vector3(0, 27, 0);
+    const pos = new THREE.Vector3(88, 72, 114);
+    this.transitionTo(pos, target, 0.85, instant);
+  }
+
+  setMapView(floorCode, instant = false) {
     const y = this.building.getFloorY(floorCode);
-    const target = new THREE.Vector3(0, y + 0.8, 0);
-    const pos = topDown
-      ? new THREE.Vector3(0, y + 44, 0.01)
-      : new THREE.Vector3(21, y + 20, 27);
+    const target = new THREE.Vector3(0, y + 0.5, 1.5);
+    const pos = new THREE.Vector3(0, y + 88, 5.0);
+    this.transitionTo(pos, target, 0.75, instant);
+  }
+
+  flyToFloor(floorCode, topDown = false) {
+    if (topDown) {
+      this.setMapView(floorCode);
+      return;
+    }
+    const y = this.building.getFloorY(floorCode);
+    const target = new THREE.Vector3(0, y + 0.5, 1.5);
+    const pos = new THREE.Vector3(39, y + 32, 50);
     this.transitionTo(pos, target, 0.75);
   }
 

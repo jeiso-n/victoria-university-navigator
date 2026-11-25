@@ -29,7 +29,8 @@ const ROOM_DB = [
   { id:'room-b111', room:'B111', name:'Study Room',           floor:'B1', floorClass:'basement', anchor:'../directions.html#room-b111' },
   { id:'room-b112', room:'B112', name:'Study Room (B112)',    floor:'B1', floorClass:'basement', anchor:'../floors/floor-b1.html' },
   // Ground Floor
-  { id:'main-entrance', room:'Entrance', name:'Main Entrance (Market Plaza)', floor:'G', floorClass:'ground', anchor:'../index.html', aliases:['main gate', 'entrance', 'lobby'] },
+  { id:'main-entrance', room:'Main Entrance', name:'Main Entrance', floor:'G', floorClass:'ground', anchor:'../floors/floor-g.html', aliases:['main entrance', 'main gate', 'entrance', 'lobby'] },
+  { id:'ground-exit',   room:'Exit',          name:'Exit',          floor:'G', floorClass:'ground', anchor:'../floors/floor-g.html', aliases:['exit', 'ground exit', 'building exit', 'way out', 'south exit'] },
   { id:'reception',   room:'Reception', name:'Reception',              floor:'G', floorClass:'ground', anchor:'../directions.html#reception' },
   { id:'art-gallery', room:'G01',       name:'Art Gallery',            floor:'G', floorClass:'ground', anchor:'../directions.html#art-gallery' },
   { id:'student-support-office', room:'G02', name:'Student Support Office', floor:'G', floorClass:'ground', anchor:'../directions.html#student-support-office' },
@@ -37,6 +38,7 @@ const ROOM_DB = [
   { id:'cooperative-education-office', room:'G04', name:'Co-operative Education Office (CEO)', floor:'G', floorClass:'ground', anchor:'../directions.html#cooperative-education-office' },
   { id:'university-administrator', room:'G05', name:'University Administrator', floor:'G', floorClass:'ground', anchor:'../directions.html#university-administrator' },
   { id:'vu-law-clinic', room:'G06',     name:'VU Law Clinic',          floor:'G', floorClass:'ground', anchor:'../directions.html#vu-law-clinic' },
+  { id:'restroom-g',  room:'Restroom',  name:'Ground Floor Restrooms (Toilets)', floor:'G', floorClass:'ground', anchor:'../floors/floor-g.html', aliases:['restroom', 'restrooms', 'toilet', 'toilets', 'washroom', 'washrooms', 'mens toilets'] },
   // Floor 1
   { id:'room-101', room:'101', name:'Staff Office', floor:'1', anchor:'../directions.html#room-101' },
   { id:'room-102', room:'102', name:'Staff Office', floor:'1', anchor:'../directions.html#room-102' },
@@ -67,6 +69,7 @@ const ROOM_DB = [
   { id:'boardroom-1', room:'—', name:'Boardroom 1', aliases:['boardroom 1', 'board room 1', 'room 207', '207'], floor:'1', anchor:'../directions.html#boardroom-1' },
   { id:'boardroom-2', room:'—', name:'Boardroom 2', aliases:['boardroom 2', 'board room 2', 'room 208', '208'], floor:'1', anchor:'../directions.html#boardroom-2' },
   { id:'boardroom-3', room:'—', name:'Boardroom 3', aliases:['boardroom 3', 'board room 3', 'room 209', '209'], floor:'1', anchor:'../directions.html#boardroom-3' },
+  { id:'restroom-1',  room:'Restroom', name:'Floor 1 Restrooms (Toilets)', floor:'1', anchor:'../floors/floor-1.html', aliases:['restroom', 'restrooms', 'toilet', 'toilets', 'washroom', 'washrooms', 'ladies toilets', 'mens toilets'] },
   // Floor 2
   { id:'cosmetic-lab', room:'201', name:'Cosmetic Lab',    floor:'2', anchor:'../directions.html#cosmetic-lab' },
   { id:'ict-lab-1',    room:'202', name:'ICT Lab 1',       floor:'2', anchor:'../directions.html#ICT-Lab-1', aliases:['ict-lab-1', 'room-202'] },
@@ -76,6 +79,7 @@ const ROOM_DB = [
   { id:'room-206',     room:'206', name:'Study Room',      floor:'2', anchor:'../directions.html#room-206' },
   { id:'ict-lab-2',    room:'ICT-2', name:'ICT Lab 2',     floor:'2', anchor:'../floors/floor-2.html', aliases:['ict lab 2', 'ict-lab2'] },
   { id:'room-210',     room:'210', name:'Storage Room',    floor:'2', anchor:'../directions.html#room-210' },
+  { id:'restroom-2',   room:'Restroom', name:'Floor 2 Restrooms (Toilets)', floor:'2', anchor:'../floors/floor-2.html', aliases:['restroom', 'restrooms', 'toilet', 'toilets', 'washroom', 'washrooms'] },
   // Floor 3
   { id:'room-301', room:'301', name:'Study Room',                    floor:'3', anchor:'../directions.html#room-301' },
   { id:'room-302', room:'302', name:'Public Health Laboratory',      floor:'3', anchor:'../directions.html#room-302' },
@@ -95,6 +99,7 @@ const ROOM_DB = [
   { id:'room-501', room:'501', name:'Laboratory 1',              floor:'5', anchor:'../directions.html#room-501' },
   { id:'room-502', room:'502', name:'Laboratory 2',              floor:'5', anchor:'../directions.html#room-502' },
   { id:'engineering-graphics-design', room:'503', name:'Engineering & Graphics Design', floor:'5', anchor:'../directions.html#engineering-graphics-design' },
+  { id:'restroom-5', room:'Restroom', name:'Floor 5 Restrooms (Toilets)', floor:'5', anchor:'../floors/floor-5.html', aliases:['restroom', 'restrooms', 'toilet', 'toilets', 'washroom', 'washrooms'] },
   // Floor 6
   { id:'room-601',        room:'6-01', name:'Study Room 6-01',                 floor:'6', anchor:'../directions.html#room-601', aliases:['601', '60-1'] },
   { id:'room-602',        room:'6-02', name:'Study Room 6-02',                 floor:'6', anchor:'../directions.html#room-602', aliases:['602', '60-2'] },
@@ -107,6 +112,7 @@ const ROOM_DB = [
   { id:'computer-lab-1',  room:'6-08', name:'Computer Lab 1',                  floor:'6', anchor:'../directions.html#computer-lab-1' },
   { id:'dean-institute',  room:'6-10', name:'Dean Institute',                  floor:'6', anchor:'../directions.html#dean-institute' },
   { id: 'executive-assistant', room:'6-11', name:'Executive Assistant & H.O.D Education', floor:'6', anchor:'../directions.html#executive-assistant' },
+  { id:'restroom-6',      room:'Restroom', name:'Floor 6 Restrooms (Washrooms)', floor:'6', anchor:'../floors/floor-6.html', aliases:['restroom', 'restrooms', 'toilet', 'toilets', 'washroom', 'washrooms', 'wash'] },
   // Floor 7
   { id:'room-701',  room:'7-01', name:'Multimedia Studio',            floor:'7', anchor:'../directions.html#room-701' },
   { id:'room-702',  room:'7-02', name:'Film / Sound Studio',          floor:'7', anchor:'../directions.html#room-702' },
@@ -119,6 +125,7 @@ const ROOM_DB = [
   { id:'office-registrar-law',  room:'—', name:'Office of Registrar – School of Law', floor:'7', anchor:'../directions.html#office-registrar-law' },
   { id:'office-associate-dean', room:'—', name:'Office of Associate Dean',   floor:'7', anchor:'../directions.html#office-associate-dean' },
   { id:'office-dean',           room:'—', name:'Office of the Dean',         floor:'7', anchor:'../directions.html#office-dean' },
+  { id:'restroom-7',            room:'Restroom', name:'Floor 7 Restrooms (Toilets)', floor:'7', anchor:'../floors/floor-7.html', aliases:['restroom', 'restrooms', 'toilet', 'toilets', 'washroom', 'washrooms', 'rest rooms'] },
   // Floor 8
   { id:'room-801', room:'8-01', name:'Room 8-01', floor:'8', anchor:'../directions.html#room-801' },
   { id:'room-802', room:'8-02', name:'Room 8-02', floor:'8', anchor:'../directions.html#room-802' },
@@ -131,6 +138,7 @@ const ROOM_DB = [
   { id:'room-810', room:'8-10', name:'Room 8-10', floor:'8', anchor:'../directions.html#room-810' },
   { id:'vice-chancellor',  room:'—', name:"Vice Chancellor's Coordination Office", floor:'8', anchor:'../directions.html#vice-chancellor' },
   { id:'quality-assurance',room:'—', name:'Quality Assurance Office',       floor:'8', anchor:'../directions.html#quality-assurance' },
+  { id:'restroom-8',       room:'Restroom', name:'Floor 8 Restrooms (Toilets)', floor:'8', anchor:'../floors/floor-8.html', aliases:['restroom', 'restrooms', 'toilet', 'toilets', 'washroom', 'washrooms', 'ladies toilets', 'men toilets'] },
   // Floor 9
   { id:'cafeteria',     room:'901', name:'Cafeteria',          floor:'9', anchor:'../directions.html#cafeteria' },
   { id:'room-902',      room:'902', name:'Library',            floor:'9', anchor:'../directions.html#room-902' },
@@ -142,6 +150,7 @@ const ROOM_DB = [
   { id:'room-908',      room:'908', name:'Program Administrators', floor:'9', anchor:'../directions.html#room-908' },
   { id:'room-909',      room:'909', name:'Meeting Room 1',     floor:'9', anchor:'../directions.html#room-909' },
   { id:'room-910',      room:'910', name:'Meeting Room 2',     floor:'9', anchor:'../directions.html#room-910' },
+  { id:'restroom-9',    room:'Restroom', name:'Floor 9 Restrooms (Toilets)', floor:'9', anchor:'../floors/floor-9.html', aliases:['restroom', 'restrooms', 'toilet', 'toilets', 'washroom', 'washrooms', 'womens toilets', 'mens toilets'] },
 ];
 
 // ─── SEARCH ENGINE ────────────────────────────────────────────────

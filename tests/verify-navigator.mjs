@@ -118,7 +118,12 @@ test('Verified SVG room doorway and entry edges have zero unpermitted solid wall
     if (!geom) continue;
     const doors = [...geom.doors];
     if (rm.floor === '9') doors.push({ cx: 7.0, cz: 16.2, width: 2.0, orient: 'H' });
-    if (rm.floor === 'G') doors.push({ cx: 6.0, cz: 27.0, width: 4.5, orient: 'H' });
+    if (rm.floor === 'G') {
+      doors.push(
+        { cx: -16.0, cz: -14.75, width: 4.5, orient: 'V' },
+        { cx: 6.0, cz: 27.0, width: 4.5, orient: 'H' }
+      );
+    }
 
     const doorNode = graph.nodes.get(`door:${rm.id}`);
     const roomNode = graph.nodes.get(`room:${rm.id}`);
@@ -278,6 +283,54 @@ test('Navigation instructions contain zero distance measurements', () => {
         );
       }
     }
+  }
+});
+
+test('Ground Floor Main Entrance is on the left side near Marketing Office and old entrance is now Exit', () => {
+  const entrance = findRoomByIdOrAlias('main-entrance');
+  const exit = findRoomByIdOrAlias('ground-exit');
+  const marketing = findRoomByIdOrAlias('marketing-office');
+  assert.ok(entrance && exit && marketing);
+  assert.equal(entrance.name, 'Main Entrance');
+  assert.equal(entrance.floor, 'G');
+  // Main Entrance must be on the Left (West) side (X < -10) near Marketing Office
+  assert.deepEqual(entrance.bounds, [-16.0, -18.0, -11.0, -11.5]);
+  assert.deepEqual(entrance.door, [-11.0, -14.75]);
+  // Exit must be at the old South-East entrance position [3.5, 22.0, 8.5, 27.0]
+  assert.equal(exit.name, 'Exit');
+  assert.equal(exit.floor, 'G');
+  assert.deepEqual(exit.bounds, [3.5, 22.0, 8.5, 27.0]);
+  assert.deepEqual(exit.door, [6.0, 24.5]);
+  // Verify routing from Main Entrance to Exit and Marketing Office
+  const toExit = pathfinder.findRoute('main-entrance', 'ground-exit', { mode: 'elevator' });
+  const toMarketing = pathfinder.findRoute('main-entrance', 'marketing-office', { mode: 'elevator' });
+  assert.ok(toExit && toExit.path.length >= 3);
+  assert.ok(toMarketing && toMarketing.path.length >= 3);
+});
+
+test('Restroom, Toilet, and Washroom search returns all 8 SVG-verified restrooms with working cross-floor routes', () => {
+  const expectedRestroomIds = [
+    'restroom-g',
+    'restroom-1',
+    'restroom-2',
+    'restroom-5',
+    'restroom-6',
+    'restroom-7',
+    'restroom-8',
+    'restroom-9',
+  ];
+  for (const term of ['Restroom', 'Restrooms', 'Toilet', 'Toilets', 'Washroom', 'Washrooms']) {
+    const hits = searchRooms(term);
+    for (const id of expectedRestroomIds) {
+      assert.ok(hits.some(r => r.id === id), `Search "${term}" failed to return ${id}`);
+    }
+  }
+  for (const id of expectedRestroomIds) {
+    const rm = findRoomByIdOrAlias(id);
+    assert.ok(rm, `Missing restroom ${id}`);
+    assert.equal(rm.verificationStatus, 'verified-svg', `Restroom ${id} must be SVG-verified`);
+    const route = pathfinder.findRoute('main-entrance', id, { mode: 'elevator' });
+    assert.ok(route && route.path.length >= 2, `Missing route from Main Entrance to ${id}`);
   }
 });
 
