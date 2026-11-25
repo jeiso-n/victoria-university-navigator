@@ -2356,3 +2356,899 @@ footer:not(.site-footer) {
     font-size: 1.15rem;
   }
 }
+
+/* ==========================================================================
+   2D / 3D MODE TOGGLE & 3D INDOOR NAVIGATOR WORKSPACE
+   ========================================================================== */
+.vu-mode-toggle {
+  display: inline-flex;
+  align-items: center;
+  background: var(--bg-subtle);
+  border: 1.5px solid var(--border);
+  border-radius: var(--radius-full);
+  padding: 3px;
+  gap: 3px;
+  flex-shrink: 0;
+  box-shadow: var(--shadow-sm);
+}
+
+.vu-mode-btn {
+  border: none;
+  background: transparent;
+  color: var(--vu-navy);
+  font-family: inherit;
+  font-size: 0.76rem;
+  font-weight: 800;
+  letter-spacing: 0.04em;
+  padding: 0.4rem 0.85rem;
+  border-radius: var(--radius-full);
+  cursor: pointer;
+  transition: all var(--transition);
+  white-space: nowrap;
+}
+
+.vu-mode-btn.active {
+  background: var(--vu-navy);
+  color: #ffffff;
+  box-shadow: 0 2px 8px rgba(27, 54, 93, 0.25);
+}
+
+.vu-mode-btn[data-mode="3d"].active {
+  background: var(--vu-blue);
+  box-shadow: 0 2px 10px rgba(0, 160, 223, 0.35);
+}
+
+.vu-mode-btn:not(.active):hover {
+  background: #ffffff;
+  color: var(--vu-blue);
+}
+
+.home-3d-cta-wrap {
+  margin-top: 0.9rem;
+}
+
+.home-3d-cta {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.55rem;
+  background: linear-gradient(135deg, var(--vu-blue) 0%, #0284c7 100%);
+  color: #ffffff;
+  border: 1px solid rgba(255, 255, 255, 0.3);
+  padding: 0.65rem 1.35rem;
+  border-radius: var(--radius-full);
+  font-family: inherit;
+  font-size: 0.88rem;
+  font-weight: 700;
+  cursor: pointer;
+  box-shadow: 0 6px 20px rgba(0, 160, 223, 0.32);
+  transition: transform var(--transition), box-shadow var(--transition);
+}
+
+.home-3d-cta:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 8px 24px rgba(0, 160, 223, 0.45);
+}
+
+.card-3d-link {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.35rem;
+  align-self: flex-end;
+  margin-top: 0.45rem;
+  font-family: inherit;
+  font-size: 0.78rem;
+  font-weight: 700;
+  color: #ffffff;
+  background: var(--vu-navy);
+  border: 1px solid var(--vu-navy);
+  padding: 0.34rem 0.88rem;
+  border-radius: var(--radius-full);
+  cursor: pointer;
+  transition: background var(--transition), transform var(--transition);
+}
+
+.card-3d-link:hover {
+  background: var(--vu-blue);
+  border-color: var(--vu-blue);
+  transform: translateY(-1px);
+}
+
+.floor-3d-cta {
+  background: var(--vu-blue-light) !important;
+  color: var(--vu-blue-hover) !important;
+}
+
+.floor-3d-cta:hover {
+  background: var(--vu-blue) !important;
+  color: #ffffff !important;
+}
+
+body.vu-3d-open {
+  overflow: hidden;
+}
+
+.vu-3d-overlay {
+  display: none;
+  position: fixed;
+  inset: 0;
+  z-index: 9500;
+  background: #eef4fa;
+  flex-direction: column;
+}
+
+.vu-3d-overlay.open {
+  display: flex;
+}
+
+.vu3d-topbar {
+  height: 58px;
+  background: #ffffff;
+  border-bottom: 1px solid var(--border);
+  padding: 0 1rem;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.75rem;
+  flex-shrink: 0;
+  box-shadow: var(--shadow-sm);
+}
+
+.vu3d-topbar-left {
+  display: flex;
+  align-items: center;
+  gap: 0.85rem;
+  min-width: 0;
+}
+
+.vu3d-back-2d {
+  background: var(--vu-navy);
+  color: #ffffff;
+  border: none;
+  border-radius: var(--radius-full);
+  padding: 0.45rem 0.95rem;
+  font-family: inherit;
+  font-size: 0.8rem;
+  font-weight: 700;
+  cursor: pointer;
+  white-space: nowrap;
+  transition: background var(--transition);
+}
+
+.vu3d-back-2d:hover {
+  background: var(--vu-blue);
+}
+
+.vu3d-brand-badge {
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+}
+
+.vu3d-brand-badge strong {
+  font-size: 0.9rem;
+  color: var(--vu-navy);
+  line-height: 1.15;
+}
+
+.vu3d-brand-badge span {
+  font-size: 0.74rem;
+  font-weight: 600;
+  color: var(--vu-blue-hover);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.vu3d-view-controls {
+  display: flex;
+  align-items: center;
+  gap: 0.35rem;
+  overflow-x: auto;
+  scrollbar-width: none;
+}
+
+.vu3d-view-controls::-webkit-scrollbar {
+  display: none;
+}
+
+.vu3d-view-btn {
+  background: var(--bg-subtle);
+  border: 1px solid var(--border);
+  color: var(--text-secondary);
+  font-family: inherit;
+  font-size: 0.76rem;
+  font-weight: 700;
+  padding: 0.38rem 0.75rem;
+  border-radius: var(--radius-sm);
+  cursor: pointer;
+  white-space: nowrap;
+  transition: all var(--transition);
+}
+
+.vu3d-view-btn:hover {
+  border-color: var(--vu-blue);
+  color: var(--vu-blue);
+  background: var(--vu-blue-light);
+}
+
+.vu3d-view-btn.active {
+  background: var(--vu-navy);
+  color: #ffffff;
+  border-color: var(--vu-navy);
+}
+
+.vu3d-mobile-panel-toggle {
+  display: none;
+  background: var(--vu-blue);
+  color: #ffffff;
+  border: none;
+  border-radius: var(--radius-full);
+  padding: 0.42rem 0.85rem;
+  font-family: inherit;
+  font-size: 0.78rem;
+  font-weight: 700;
+  cursor: pointer;
+}
+
+.vu3d-workspace {
+  flex: 1;
+  display: flex;
+  min-height: 0;
+  position: relative;
+}
+
+.vu3d-left-panel {
+  width: 345px;
+  background: #ffffff;
+  border-right: 1px solid var(--border);
+  display: flex;
+  flex-direction: column;
+  overflow-y: auto;
+  z-index: 20;
+  box-shadow: var(--shadow-md);
+}
+
+.vu3d-panel-section {
+  padding: 0.9rem 1rem;
+  border-bottom: 1px solid var(--border);
+}
+
+.vu3d-label {
+  display: block;
+  font-size: 0.72rem;
+  font-weight: 800;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  color: var(--vu-navy);
+  margin-bottom: 0.4rem;
+}
+
+.vu3d-search-box {
+  position: relative;
+  display: flex;
+  align-items: center;
+}
+
+#vu3d-search-input {
+  width: 100%;
+  padding: 0.58rem 2.1rem 0.58rem 0.85rem;
+  border: 1.5px solid var(--border);
+  border-radius: var(--radius-md);
+  font-family: inherit;
+  font-size: 0.86rem;
+  outline: none;
+  transition: border-color var(--transition), box-shadow var(--transition);
+}
+
+#vu3d-search-input:focus {
+  border-color: var(--vu-blue);
+  box-shadow: var(--shadow-glow);
+}
+
+.vu3d-clear-search {
+  position: absolute;
+  right: 8px;
+  background: none;
+  border: none;
+  color: var(--text-muted);
+  font-size: 1.15rem;
+  cursor: pointer;
+}
+
+.vu3d-search-results {
+  margin-top: 0.45rem;
+  max-height: 230px;
+  overflow-y: auto;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.vu3d-result-item {
+  display: flex;
+  align-items: center;
+  gap: 0.6rem;
+  padding: 0.5rem 0.6rem;
+  border: 1px solid var(--border);
+  border-radius: var(--radius-sm);
+  background: #ffffff;
+  text-align: left;
+  cursor: pointer;
+  font-family: inherit;
+  transition: background var(--transition), border-color var(--transition);
+}
+
+.vu3d-result-item:hover {
+  background: var(--vu-blue-light);
+  border-color: var(--vu-blue);
+}
+
+.vu3d-res-floor {
+  min-width: 30px;
+  height: 30px;
+  border-radius: 6px;
+  background: var(--vu-navy);
+  color: #ffffff;
+  font-size: 0.72rem;
+  font-weight: 800;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.vu3d-res-floor.basement { background: #475569; }
+.vu3d-res-floor.ground { background: var(--vu-green); }
+
+.vu3d-res-meta {
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+}
+
+.vu3d-res-meta strong {
+  font-size: 0.82rem;
+  color: var(--text-primary);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.vu3d-res-meta small {
+  font-size: 0.72rem;
+  color: var(--text-muted);
+}
+
+.vu3d-res-go {
+  font-size: 0.72rem;
+  font-weight: 700;
+  color: var(--vu-blue);
+}
+
+.vu3d-no-results {
+  padding: 0.65rem;
+  text-align: center;
+  font-size: 0.8rem;
+  color: var(--text-muted);
+}
+
+.vu3d-route-setup select {
+  width: 100%;
+  padding: 0.5rem 0.65rem;
+  border: 1.5px solid var(--border);
+  border-radius: var(--radius-sm);
+  font-family: inherit;
+  font-size: 0.82rem;
+  background: #ffffff;
+  color: var(--text-primary);
+  margin-bottom: 0.65rem;
+}
+
+.vu3d-route-mode-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.5rem;
+}
+
+.vu3d-route-mode-row .vu3d-label {
+  margin-bottom: 0;
+}
+
+.vu3d-mode-pills {
+  display: flex;
+  gap: 4px;
+}
+
+.vu3d-vmode {
+  border: 1px solid var(--border);
+  background: var(--bg-subtle);
+  color: var(--text-secondary);
+  font-family: inherit;
+  font-size: 0.76rem;
+  font-weight: 700;
+  padding: 0.34rem 0.65rem;
+  border-radius: var(--radius-sm);
+  cursor: pointer;
+}
+
+.vu3d-vmode.active {
+  background: var(--vu-navy);
+  color: #ffffff;
+  border-color: var(--vu-navy);
+}
+
+.vu3d-selected-card {
+  padding: 0.95rem 1rem;
+  border-bottom: 1px solid var(--border);
+}
+
+.vu3d-empty-state p {
+  font-size: 0.83rem;
+  color: var(--text-secondary);
+  margin-bottom: 0.45rem;
+}
+
+.vu3d-audit-note {
+  font-size: 0.74rem !important;
+  color: var(--text-muted) !important;
+}
+
+.vu3d-room-header {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 0.5rem;
+  margin-bottom: 0.55rem;
+}
+
+.vu3d-room-pill {
+  display: inline-block;
+  background: var(--vu-blue-light);
+  color: var(--vu-blue-hover);
+  border: 1px solid var(--vu-blue-border);
+  border-radius: var(--radius-full);
+  font-size: 0.7rem;
+  font-weight: 800;
+  padding: 2px 9px;
+  margin-bottom: 4px;
+}
+
+.vu3d-room-header h3 {
+  font-size: 1rem;
+  color: var(--vu-navy);
+  line-height: 1.25;
+}
+
+.vu3d-badge {
+  font-size: 0.68rem;
+  font-weight: 700;
+  padding: 3px 8px;
+  border-radius: var(--radius-full);
+  white-space: nowrap;
+}
+
+.vu3d-badge.verified { background: #ecfdf5; color: #059669; }
+.vu3d-badge.est { background: #fffbeb; color: #b45309; }
+.vu3d-badge.warn { background: #fef2f2; color: #dc2626; }
+
+.vu3d-room-dir {
+  font-size: 0.82rem;
+  color: var(--text-secondary);
+  margin-bottom: 0.5rem;
+}
+
+.vu3d-ver-note {
+  font-size: 0.74rem;
+  color: #92400e;
+  background: #fffbeb;
+  border-left: 3px solid #f59e0b;
+  padding: 0.35rem 0.55rem;
+  border-radius: 4px;
+  margin-bottom: 0.55rem;
+}
+
+.vu3d-room-thumb {
+  width: 100%;
+  max-height: 130px;
+  object-fit: cover;
+  border-radius: var(--radius-sm);
+  border: 1px solid var(--border);
+  margin-bottom: 0.65rem;
+}
+
+.vu3d-room-actions {
+  display: flex;
+  flex-direction: column;
+  gap: 0.45rem;
+}
+
+.vu3d-nav-cta {
+  width: 100%;
+  background: linear-gradient(135deg, var(--vu-blue) 0%, #0284c7 100%);
+  color: #ffffff;
+  border: none;
+  border-radius: var(--radius-sm);
+  padding: 0.62rem 0.9rem;
+  font-family: inherit;
+  font-size: 0.85rem;
+  font-weight: 700;
+  cursor: pointer;
+  box-shadow: 0 4px 12px rgba(0, 160, 223, 0.3);
+}
+
+.vu3d-nav-cta:hover {
+  filter: brightness(1.05);
+}
+
+.vu3d-2d-link {
+  text-align: center;
+  font-size: 0.78rem;
+  font-weight: 600;
+  color: var(--vu-navy);
+  text-decoration: none;
+  padding: 0.3rem;
+}
+
+.vu3d-2d-link:hover {
+  color: var(--vu-blue);
+  text-decoration: underline;
+}
+
+.vu3d-directions-panel {
+  padding: 0.85rem 1rem;
+  flex: 1;
+}
+
+.vu3d-directions-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 0.65rem;
+}
+
+.vu3d-directions-header strong {
+  display: block;
+  font-size: 0.84rem;
+  color: var(--vu-navy);
+}
+
+.vu3d-directions-header span {
+  font-size: 0.74rem;
+  color: var(--text-muted);
+}
+
+.vu3d-clear-route {
+  background: var(--bg-subtle);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-sm);
+  padding: 0.25rem 0.55rem;
+  font-size: 0.74rem;
+  font-weight: 700;
+  cursor: pointer;
+}
+
+.vu3d-steps-list {
+  list-style: none;
+  display: flex;
+  flex-direction: column;
+  gap: 0.45rem;
+}
+
+.vu3d-step-item {
+  display: flex;
+  align-items: flex-start;
+  gap: 0.55rem;
+  padding: 0.52rem 0.6rem;
+  border-radius: var(--radius-sm);
+  border: 1px solid var(--border);
+  font-size: 0.8rem;
+  color: var(--text-secondary);
+  cursor: pointer;
+  transition: all var(--transition);
+}
+
+.vu3d-step-item:hover {
+  border-color: var(--vu-blue);
+  background: var(--vu-blue-light);
+}
+
+.vu3d-step-item.active {
+  background: var(--vu-blue-light);
+  border-color: var(--vu-blue);
+  color: var(--vu-navy);
+  font-weight: 600;
+}
+
+.vu3d-step-item.notice {
+  background: #fffbeb;
+  border-color: #fde68a;
+  color: #92400e;
+}
+
+.vu3d-step-fl {
+  min-width: 26px;
+  height: 22px;
+  border-radius: 4px;
+  background: var(--vu-navy);
+  color: #ffffff;
+  font-size: 0.68rem;
+  font-weight: 800;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+}
+
+.vu3d-canvas-area {
+  flex: 1;
+  position: relative;
+  min-width: 0;
+  overflow: hidden;
+}
+
+.vu3d-canvas-mount {
+  width: 100%;
+  height: 100%;
+  position: relative;
+}
+
+.vu3d-loader {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 0.9rem;
+  background: #eef4fa;
+  color: var(--vu-navy);
+  font-weight: 600;
+  font-size: 0.92rem;
+}
+
+.vu3d-spinner {
+  width: 42px;
+  height: 42px;
+  border: 4px solid #cbd5e1;
+  border-top-color: var(--vu-blue);
+  border-radius: 50%;
+  animation: vu3d-spin 0.8s linear infinite;
+}
+
+@keyframes vu3d-spin {
+  to { transform: rotate(360deg); }
+}
+
+.vu3d-hover-tooltip {
+  position: absolute;
+  pointer-events: none;
+  background: rgba(15, 23, 42, 0.9);
+  color: #ffffff;
+  padding: 5px 10px;
+  border-radius: 6px;
+  font-size: 0.76rem;
+  font-weight: 600;
+  z-index: 30;
+  white-space: nowrap;
+}
+
+.vu3d-floor-rail {
+  position: absolute;
+  right: 14px;
+  top: 50%;
+  transform: translateY(-50%);
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  background: rgba(255, 255, 255, 0.92);
+  padding: 6px;
+  border-radius: var(--radius-md);
+  border: 1px solid var(--border);
+  box-shadow: var(--shadow-md);
+  z-index: 25;
+  max-height: calc(100% - 90px);
+  overflow-y: auto;
+}
+
+.vu3d-floor-pill {
+  min-width: 40px;
+  height: 28px;
+  border-radius: 6px;
+  border: 1px solid var(--border);
+  background: #ffffff;
+  color: var(--vu-navy);
+  font-family: inherit;
+  font-size: 0.72rem;
+  font-weight: 800;
+  cursor: pointer;
+  transition: all var(--transition);
+}
+
+.vu3d-floor-pill:hover {
+  border-color: var(--vu-blue);
+  background: var(--vu-blue-light);
+}
+
+.vu3d-floor-pill.active {
+  background: var(--vu-blue);
+  color: #ffffff;
+  border-color: var(--vu-blue);
+}
+
+.vu3d-floor-pill.in-route:not(.active) {
+  border-color: var(--vu-orange);
+  box-shadow: inset 0 0 0 1px var(--vu-orange);
+}
+
+.vu3d-legend-chip {
+  position: absolute;
+  top: 12px;
+  left: 14px;
+  background: rgba(255, 255, 255, 0.92);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-full);
+  padding: 5px 12px;
+  display: flex;
+  gap: 10px;
+  font-size: 0.72rem;
+  font-weight: 600;
+  color: var(--text-secondary);
+  box-shadow: var(--shadow-sm);
+  z-index: 22;
+}
+
+.vu3d-legend-chip span {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+}
+
+.vu3d-legend-chip i {
+  display: inline-block;
+  width: 10px;
+  height: 10px;
+  border-radius: 3px;
+}
+
+.vu3d-bottom-bar {
+  position: absolute;
+  left: 14px;
+  right: 74px;
+  bottom: 14px;
+  background: rgba(255, 255, 255, 0.96);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-lg);
+  padding: 0.65rem 0.9rem;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.75rem;
+  box-shadow: var(--shadow-lg);
+  z-index: 25;
+}
+
+.vu3d-step-active-info {
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  align-items: center;
+  gap: 0.6rem;
+}
+
+.vu3d-step-floor-pill {
+  background: var(--vu-navy);
+  color: #ffffff;
+  font-size: 0.72rem;
+  font-weight: 800;
+  padding: 3px 8px;
+  border-radius: 6px;
+  white-space: nowrap;
+}
+
+.vu3d-step-text {
+  font-size: 0.84rem;
+  font-weight: 600;
+  color: var(--text-primary);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.vu3d-bottom-actions {
+  display: flex;
+  gap: 0.4rem;
+}
+
+.vu3d-step-nav {
+  background: var(--bg-subtle);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-sm);
+  padding: 0.4rem 0.7rem;
+  font-family: inherit;
+  font-size: 0.78rem;
+  font-weight: 700;
+  color: var(--vu-navy);
+  cursor: pointer;
+  white-space: nowrap;
+}
+
+.vu3d-step-nav:hover {
+  background: var(--vu-blue);
+  color: #ffffff;
+  border-color: var(--vu-blue);
+}
+
+.vu3d-webgl-fallback {
+  max-width: 440px;
+  margin: 4rem auto;
+  background: #ffffff;
+  border: 1px solid var(--border);
+  border-radius: var(--radius-lg);
+  padding: 2rem;
+  text-align: center;
+  box-shadow: var(--shadow-md);
+}
+
+.vu3d-webgl-fallback h3 {
+  color: var(--vu-navy);
+  margin-bottom: 0.6rem;
+}
+
+.vu3d-webgl-fallback p {
+  font-size: 0.9rem;
+  color: var(--text-secondary);
+  margin-bottom: 0.9rem;
+}
+
+@media (max-width: 768px) {
+  .vu3d-topbar {
+    height: auto;
+    flex-wrap: wrap;
+    padding: 0.55rem 0.75rem;
+  }
+
+  .vu3d-view-controls {
+    order: 3;
+    width: 100%;
+  }
+
+  .vu3d-mobile-panel-toggle {
+    display: inline-flex;
+  }
+
+  .vu3d-left-panel {
+    position: absolute;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    top: auto;
+    width: 100%;
+    max-height: 62vh;
+    border-right: none;
+    border-top: 2px solid var(--vu-blue);
+    border-radius: 16px 16px 0 0;
+    transform: translateY(105%);
+    transition: transform 0.28s ease;
+  }
+
+  .vu3d-left-panel.mobile-open {
+    transform: translateY(0);
+  }
+
+  .vu3d-legend-chip {
+    display: none;
+  }
+
+  .vu3d-bottom-bar {
+    right: 64px;
+    left: 10px;
+    bottom: 10px;
+    flex-wrap: wrap;
+  }
+
+  .vu-mode-btn {
+    padding: 0.34rem 0.62rem;
+    font-size: 0.7rem;
+  }
+}

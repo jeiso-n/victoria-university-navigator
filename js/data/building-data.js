@@ -172,10 +172,10 @@ export const ENHANCED_ROOM_DB = [
   // GROUND FLOOR (G) — SVG: floors/ground-floor.svg
   // ════════════════════════════════════════════════════════════════
   r('main-entrance', 'Entrance', 'Main Entrance (Market Plaza)', 'G', 'facility',
-    [-2.5, 22.0, 2.5, 27.0], [0.0, 24.5],
+    [3.5, 22.0, 8.5, 27.0], [6.0, 24.5],
     { svgLabel: 'Main Entrance', aliases: ['entrance', 'main gate', 'lobby', 'start'], anchor: '../index.html',
       verificationStatus: 'estimated-from-directions',
-      verificationNote: 'South Ground Floor lobby entrance leading toward Reception as described in directions.html.',
+      verificationNote: 'South Ground Floor main entrance foyer leading north toward Reception as described in directions.html.',
       directionsText: 'Main Victoria University entrance at Ground Floor, Market Plaza Tower.' }),
   r('reception', 'Reception', 'Reception', 'G', 'facility',
     [4.0, -21.0, 10.0, -11.0], [4.0, -14.0],
