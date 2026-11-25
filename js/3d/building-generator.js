@@ -213,11 +213,12 @@ export class BuildingGenerator {
       }
     }
 
-    // Vertical shaft visibility & scaling
+    // Vertical shaft visibility & scaling (full tower / exploded show full 12-level shaft;
+    // isolated / cutaway rely on each floor's own purple elevator core & staircases without floating upper flights)
     if (mode === 'exploded') {
       this.verticalCoreGroup.visible = true;
       this.verticalCoreGroup.scale.y = spacing / FLOOR_HEIGHT;
-    } else if (mode === 'isolated') {
+    } else if (mode === 'isolated' || mode === 'cutaway') {
       this.verticalCoreGroup.visible = false;
     } else {
       this.verticalCoreGroup.visible = true;
