@@ -387,7 +387,7 @@ class NavigatorController {
                 <strong>Turn-by-Turn Route</strong>
                 <span id="vu3d-route-stats"></span>
               </div>
-              <button type="button" class="vu3d-clear-route" id="vu3d-clear-route">Clear</button>
+              <button type="button" class="vu3d-clear-route" id="vu3d-clear-route" title="Cancel navigation and clear destination">Cancel Navigation</button>
             </div>
             <ol class="vu3d-steps-list" id="vu3d-steps-list"></ol>
           </div>
@@ -431,6 +431,7 @@ class NavigatorController {
             <div class="vu3d-bottom-actions">
               <button type="button" class="vu3d-step-nav" id="vu3d-play-route">▶ Follow</button>
               <button type="button" class="vu3d-step-nav" id="vu3d-next-step">Next ›</button>
+              <button type="button" class="vu3d-step-nav vu3d-step-cancel" id="vu3d-bottom-cancel" title="Cancel navigation and clear destination">✕ Cancel</button>
             </div>
           </div>
         </div>
@@ -529,7 +530,11 @@ class NavigatorController {
       }
     });
 
-    el.querySelector('#vu3d-clear-route').addEventListener('click', () => this.clearRoute());
+    el.querySelector('#vu3d-clear-route').addEventListener('click', () => this.cancelDestination());
+    const bottomCancel = el.querySelector('#vu3d-bottom-cancel');
+    if (bottomCancel) {
+      bottomCancel.addEventListener('click', () => this.cancelDestination());
+    }
     el.querySelector('#vu3d-prev-step').addEventListener('click', () => this.goToStep(this.activeStepIdx - 1));
     el.querySelector('#vu3d-next-step').addEventListener('click', () => this.goToStep(this.activeStepIdx + 1));
     el.querySelector('#vu3d-play-route').addEventListener('click', () => this.toggleWalkthrough());
@@ -726,6 +731,9 @@ class NavigatorController {
         <button type="button" class="vu3d-nav-cta" id="vu3d-btn-navigate">
           🧭 Navigate Here in 3D
         </button>
+        <button type="button" class="vu3d-cancel-cta" id="vu3d-btn-cancel-dest">
+          ✕ Clear Destination
+        </button>
         <a class="vu3d-2d-link" href="${this.basePath}/${(rm.anchor || `directions.html#${rm.id}`).replace(/^\.\.\//, '')}">
           Open in 2D Directory
         </a>
@@ -735,6 +743,12 @@ class NavigatorController {
     card.querySelector('#vu3d-btn-navigate').addEventListener('click', () => {
       this.startNavigationTo(rm);
     });
+    const cancelBtn = card.querySelector('#vu3d-btn-cancel-dest');
+    if (cancelBtn) {
+      cancelBtn.addEventListener('click', () => {
+        this.cancelDestination();
+      });
+    }
     const jumpBtn = card.querySelector('#vu3d-jump-pinned');
     if (jumpBtn) {
       jumpBtn.addEventListener('click', () => {
@@ -871,15 +885,65 @@ class NavigatorController {
     if (btn) btn.textContent = '▶ Follow';
   }
 
-  clearRoute() {
+  renderEmptySelectedCard() {
+    if (!this.overlayEl) return;
+    const card = this.overlayEl.querySelector('#vu3d-selected-card');
+    if (!card) return;
+    card.innerHTML = `
+      <div class="vu3d-empty-state">
+        <p><strong>Click any room</strong> on the 3D floor plan or search above to inspect details and calculate an indoor walking route.</p>
+        <p class="vu3d-audit-note">12 floors mapped · ${AUDIT_SUMMARY.totalRoomsMapped} rooms &amp; facilities indexed from SVG blueprints.</p>
+      </div>
+    `;
+  }
+
+  cancelDestination() {
     this.stopWalkthrough();
+    this.selectedRoom = null;
     this.currentRoute = null;
-    if (this.sceneManager) this.sceneManager.clearRoute();
-    if (this.overlayEl) {
-      this.overlayEl.querySelector('#vu3d-directions-panel').hidden = true;
-      this.overlayEl.querySelector('#vu3d-bottom-bar').hidden = true;
-      this.overlayEl.querySelectorAll('.vu3d-floor-pill').forEach(b => b.classList.remove('in-route'));
+    this.activeStepIdx = 0;
+
+    if (this.sceneManager) {
+      this.sceneManager.clearSelectionAndRoute();
     }
+
+    writeSavedState({ selectedRoomId: null });
+    if (typeof window.__VU_CLEAR_2D_SELECTION__ === 'function') {
+      window.__VU_CLEAR_2D_SELECTION__();
+    } else if (window.location.hash) {
+      history.replaceState(null, '', window.location.pathname + window.location.search);
+    }
+
+    const globalInput = document.getElementById('globalSearch');
+    const globalResults = document.getElementById('searchResults');
+    if (globalInput) globalInput.value = '';
+    if (globalResults) globalResults.classList.remove('open');
+
+    if (this.overlayEl) {
+      const searchInput = this.overlayEl.querySelector('#vu3d-search-input');
+      const searchResults = this.overlayEl.querySelector('#vu3d-search-results');
+      if (searchInput) searchInput.value = '';
+      if (searchResults) searchResults.innerHTML = '';
+
+      this.renderEmptySelectedCard();
+
+      const dirPanel = this.overlayEl.querySelector('#vu3d-directions-panel');
+      const stepsList = this.overlayEl.querySelector('#vu3d-steps-list');
+      const routeStats = this.overlayEl.querySelector('#vu3d-route-stats');
+      const bottomBar = this.overlayEl.querySelector('#vu3d-bottom-bar');
+      if (dirPanel) dirPanel.hidden = true;
+      if (stepsList) stepsList.innerHTML = '';
+      if (routeStats) routeStats.textContent = '';
+      if (bottomBar) bottomBar.hidden = true;
+
+      this.overlayEl.querySelectorAll('.vu3d-floor-pill').forEach(b => {
+        b.classList.remove('in-route', 'has-pinned-dest');
+      });
+    }
+  }
+
+  clearRoute() {
+    this.cancelDestination();
   }
 }
 

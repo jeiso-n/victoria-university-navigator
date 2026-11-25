@@ -208,18 +208,23 @@ export class SceneManager {
     const route = this.pathfinder.findRoute(startRoomId, destRoomId, { mode });
     if (!route) return null;
     if (!options.preserveViewMode) {
-      this.building.applyViewMode('isolated', route.startRoom.floor);
+      this.building.applyViewMode('isolated', route.destRoom.floor);
     }
     this.roomManager.selectRoom(route.destRoom.id);
     this.routeRenderer.renderRoute(route);
     if (!options.keepFocusOnRoom) {
-      this.cameraController.flyToFloor(route.startRoom.floor, false);
+      this.cameraController.flyToFloor(route.destRoom.floor, false);
     }
     return route;
   }
 
   clearRoute() {
     this.routeRenderer.clearRoute();
+  }
+
+  clearSelectionAndRoute() {
+    if (this.routeRenderer) this.routeRenderer.clearRoute();
+    if (this.roomManager) this.roomManager.clearSelection();
   }
 
   animate() {

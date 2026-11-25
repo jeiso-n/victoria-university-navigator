@@ -543,7 +543,7 @@ async function run() {
         }
         return { entPortal, exitPortal, gNdc: { x: gNdc.x, y: gNdc.y, z: gNdc.z }, badges };
       })()`);
-      assert.deepEqual(groundAndLabelAudit.entPortal, { x: -16, z: -14.75, label: 'Main Entrance' });
+      assert.deepEqual(groundAndLabelAudit.entPortal, { x: -8, z: 27, label: 'Main Entrance' });
       assert.deepEqual(groundAndLabelAudit.exitPortal, { x: 6, z: 27, label: 'Exit' });
       assert.ok(
         Math.abs(groundAndLabelAudit.gNdc.x) < 0.85 && Math.abs(groundAndLabelAudit.gNdc.y) < 0.85 && groundAndLabelAudit.gNdc.z < 1,
@@ -580,7 +580,7 @@ async function run() {
       assert.ok(mapViewCamera.camZ >= 4.0 && mapViewCamera.camZ <= 6.0, `Unexpected Map View Z tilt: ${JSON.stringify(mapViewCamera)}`);
       assert.equal(mapViewCamera.badgeInView, true, `Floor badge must remain visible in Map View: ${JSON.stringify(mapViewCamera)}`);
 
-      // Click Reset View and confirm it restores the separate default 3D perspective camera preset while keeping selected destination
+      // Click Reset View and confirm it restores the separate h1.png standard 3D perspective camera preset while keeping selected destination
       await cdp.eval("document.getElementById('vu3d-btn-reset').click()");
       await new Promise(r => setTimeout(r, 850));
       const afterResetView = await cdp.eval(`(() => {
@@ -597,10 +597,84 @@ async function run() {
       })()`);
       assert.equal(afterResetView.topDown, false);
       assert.equal(afterResetView.btnActive, false);
-      assert.equal(afterResetView.camX, 39);
-      assert.equal(afterResetView.camY, 32);
-      assert.equal(afterResetView.camZ, 50);
+      assert.equal(afterResetView.camX, 35);
+      assert.equal(afterResetView.camY, 31);
+      assert.equal(afterResetView.camZ, 44);
       assert.equal(afterResetView.selectedId, 'room-305');
+
+      // Verify Cafeteria L-shaped geometry (cafe.png), doorway pin (-10.35, -21.53), route to Cafeteria door, and h1.png Reset View on Floor 9
+      const cafeCheck = await cdp.eval(`(() => {
+        const nav = window.__VU_NAVIGATOR__;
+        const input = document.getElementById('vu3d-search-input');
+        const aliasCounts = {};
+        for (const q of ['Cafeteria', 'Cafe', 'Café', 'Canteen']) {
+          input.value = q;
+          input.dispatchEvent(new Event('input', { bubbles: true }));
+          aliasCounts[q] = [...document.querySelectorAll('#vu3d-search-results .vu3d-result-item')].some(
+            b => b.dataset.roomId === 'cafeteria'
+          );
+        }
+        const cafeBtn = document.querySelector('#vu3d-search-results .vu3d-result-item[data-room-id="cafeteria"]');
+        if (cafeBtn) cafeBtn.click();
+        const sm = nav.sceneManager;
+        const cafeMesh = sm.building.roomMeshById.get('cafeteria');
+        const companions = cafeMesh?.userData?.companionMeshes || [];
+        const pinObj = sm.roomManager.highlightGroup.children.find(c => c.userData?.isBeaconPin);
+        const path = nav.currentRoute?.path || [];
+        const lastNode = path[path.length - 1];
+        const doorNode = path[path.length - 2];
+        return {
+          aliasCounts,
+          activeFloor: nav.activeFloor,
+          companionCount: companions.length,
+          pinX: pinObj ? Number(pinObj.position.x.toFixed(2)) : null,
+          pinZ: pinObj ? Number(pinObj.position.z.toFixed(2)) : null,
+          doorNode: doorNode ? { x: doorNode.x, z: doorNode.z } : null,
+          lastNode: lastNode ? { x: lastNode.x, z: lastNode.z } : null,
+        };
+      })()`);
+      assert.deepEqual(cafeCheck.aliasCounts, { Cafeteria: true, Cafe: true, 'Café': true, Canteen: true });
+      assert.equal(cafeCheck.activeFloor, '9');
+      assert.equal(cafeCheck.companionCount, 2, 'Cafeteria must have 2 companion floor meshes for its L-shaped area');
+      assert.equal(cafeCheck.pinX, -10.35);
+      assert.equal(cafeCheck.pinZ, -21.53);
+      assert.deepEqual(cafeCheck.doorNode, { x: -10, z: -21.53 });
+      assert.deepEqual(cafeCheck.lastNode, { x: -10.35, z: -21.53 });
+      await cdp.eval("document.getElementById('vu3d-btn-reset').click()");
+      await snap('verify_floor9_cafeteria_h1.png');
+
+      // Verify Destination Cancellation (#vu3d-btn-cancel-dest / #vu3d-clear-route) clears all selection, pin, route arrows, and UI panels
+      await cdp.eval("document.getElementById('vu3d-btn-cancel-dest').click()");
+      const afterCancel = await cdp.eval(`(() => {
+        const nav = window.__VU_NAVIGATOR__;
+        const sm = nav.sceneManager;
+        return {
+          selectedRoom: nav.selectedRoom,
+          currentRoute: nav.currentRoute,
+          rmSelectedId: sm.roomManager.selectedRoomId,
+          pinVisible: sm.roomManager.highlightGroup.visible,
+          highlightChildren: sm.roomManager.highlightGroup.children.length,
+          arrowCount: sm.routeRenderer.arrowMeshes.length,
+          routeChildren: sm.routeRenderer.routeGroup.children.length,
+          dirHidden: document.getElementById('vu3d-directions-panel').hidden,
+          bottomHidden: document.getElementById('vu3d-bottom-bar').hidden,
+          hasEmptyState: Boolean(document.querySelector('#vu3d-selected-card .vu3d-empty-state')),
+          pinnedPills: document.querySelectorAll('.vu3d-floor-pill.has-pinned-dest, .vu3d-floor-pill.in-route').length,
+          activeFloorPreserved: nav.activeFloor,
+        };
+      })()`);
+      assert.equal(afterCancel.selectedRoom, null);
+      assert.equal(afterCancel.currentRoute, null);
+      assert.equal(afterCancel.rmSelectedId, null);
+      assert.equal(afterCancel.pinVisible, false);
+      assert.equal(afterCancel.highlightChildren, 0);
+      assert.equal(afterCancel.arrowCount, 0);
+      assert.equal(afterCancel.routeChildren, 0);
+      assert.equal(afterCancel.dirHidden, true);
+      assert.equal(afterCancel.bottomHidden, true);
+      assert.equal(afterCancel.hasEmptyState, true);
+      assert.equal(afterCancel.pinnedPills, 0);
+      assert.equal(afterCancel.activeFloorPreserved, '9');
 
       // Also check Full Building Reset View projects all 12 floor badges inside the viewport
       await cdp.eval("document.querySelector('.vu3d-view-btn[data-view=\"building\"]').click()");

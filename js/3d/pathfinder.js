@@ -235,11 +235,14 @@ export class IndoorPathfinder {
           });
         }
       } else if (edge.kind === 'enter' && i === edges.length - 1) {
+        const isCafe = destRoom.id === 'cafeteria';
         steps.push({
           stepNumber: stepNum++,
           floor: destRoom.floor,
           kind: 'arrive',
-          instruction: `Enter ${destRoom.name}${destRoom.room && destRoom.room !== '—' ? ` (Room ${destRoom.room})` : ''}.`,
+          instruction: isCafe
+            ? 'Enter through the Cafeteria entrance door (Room 901).'
+            : `Enter ${destRoom.name}${destRoom.room && destRoom.room !== '—' ? ` (Room ${destRoom.room})` : ''}.`,
           node: toNode,
         });
       }

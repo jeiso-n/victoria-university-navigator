@@ -45,15 +45,21 @@ export class RoomManager {
 
   setHoveredMesh(mesh) {
     if (this.hoveredMesh === mesh) return;
-    if (this.hoveredMesh && this.hoveredMesh !== this.selectedMesh) {
-      this.hoveredMesh.material.opacity = this.hoveredMesh.userData.baseOpacity;
-      this.hoveredMesh.material.emissive.setHex(0x000000);
+    if (this.hoveredMesh && (!this.selectedMesh || this.hoveredMesh.userData.roomId !== this.selectedRoomId)) {
+      const oldCompanions = this.hoveredMesh.userData.companionMeshes || [this.hoveredMesh];
+      for (const m of oldCompanions) {
+        m.material.opacity = m.userData.baseOpacity;
+        m.material.emissive.setHex(0x000000);
+      }
     }
     this.hoveredMesh = mesh;
-    if (mesh && mesh !== this.selectedMesh) {
-      mesh.material.opacity = 0.55;
-      mesh.material.emissive.setHex(0x00a0df);
-      mesh.material.emissiveIntensity = 0.35;
+    if (mesh && mesh.userData.roomId !== this.selectedRoomId) {
+      const companions = mesh.userData.companionMeshes || [mesh];
+      for (const m of companions) {
+        m.material.opacity = 0.55;
+        m.material.emissive.setHex(0x00a0df);
+        m.material.emissiveIntensity = 0.35;
+      }
     }
   }
 
@@ -68,9 +74,12 @@ export class RoomManager {
     this.selectedMesh = mesh;
     const rm = mesh.userData.roomData;
 
-    mesh.material.opacity = 0.72;
-    mesh.material.emissive.setHex(0x00a0df);
-    mesh.material.emissiveIntensity = 0.55;
+    const companions = mesh.userData.companionMeshes || [mesh];
+    for (const m of companions) {
+      m.material.opacity = 0.72;
+      m.material.emissive.setHex(0x00a0df);
+      m.material.emissiveIntensity = 0.55;
+    }
 
     this.createHighlightVisuals(rm);
     return rm;
@@ -78,31 +87,40 @@ export class RoomManager {
 
   clearSelection() {
     if (this.selectedMesh) {
-      this.selectedMesh.material.opacity = this.selectedMesh.userData.baseOpacity;
-      this.selectedMesh.material.emissive.setHex(0x000000);
-      this.selectedMesh.material.emissiveIntensity = 0;
+      const companions = this.selectedMesh.userData.companionMeshes || [this.selectedMesh];
+      for (const m of companions) {
+        m.material.opacity = m.userData.baseOpacity;
+        m.material.emissive.setHex(0x000000);
+        m.material.emissiveIntensity = 0;
+      }
     }
     this.selectedRoomId = null;
     this.selectedMesh = null;
     this.clearGroup(this.highlightGroup);
+    this.highlightGroup.visible = false;
   }
 
   createHighlightVisuals(rm) {
     this.clearGroup(this.highlightGroup);
     const y = this.building.getFloorY(rm.floor);
-    const [x1, z1, x2, z2] = rm.bounds;
-    const w = Math.max(1.4, x2 - x1 - 0.15);
-    const d = Math.max(1.4, z2 - z1 - 0.15);
-    const cx = (x1 + x2) / 2;
-    const cz = (z1 + z2) / 2;
+    const boxes = Array.isArray(rm.subBounds) && rm.subBounds.length > 0 ? rm.subBounds : [rm.bounds];
 
-    // Glowing outline box
-    const boxGeo = new THREE.BoxGeometry(w, 2.8, d);
-    const edgeGeo = new THREE.EdgesGeometry(boxGeo);
-    const edgeMat = new THREE.LineBasicMaterial({ color: 0x00a0df, linewidth: 2 });
-    const outline = new THREE.LineSegments(edgeGeo, edgeMat);
-    outline.position.set(cx, y + 1.4, cz);
-    this.highlightGroup.add(outline);
+    for (const [x1, z1, x2, z2] of boxes) {
+      const w = Math.max(1.4, x2 - x1 - 0.15);
+      const d = Math.max(1.4, z2 - z1 - 0.15);
+      const bCx = (x1 + x2) / 2;
+      const bCz = (z1 + z2) / 2;
+
+      // Glowing outline box
+      const boxGeo = new THREE.BoxGeometry(w, 2.8, d);
+      const edgeGeo = new THREE.EdgesGeometry(boxGeo);
+      const edgeMat = new THREE.LineBasicMaterial({ color: 0x00a0df, linewidth: 2 });
+      const outline = new THREE.LineSegments(edgeGeo, edgeMat);
+      outline.position.set(bCx, y + 1.4, bCz);
+      this.highlightGroup.add(outline);
+    }
+
+    const [pinX, pinZ] = rm.pinPos || rm.center;
 
     // Pulsing floor ring
     const ringGeo = new THREE.RingGeometry(0.9, 1.35, 32);
@@ -114,13 +132,13 @@ export class RoomManager {
     });
     const ring = new THREE.Mesh(ringGeo, ringMat);
     ring.rotation.x = -Math.PI / 2;
-    ring.position.set(cx, y + 0.14, cz);
+    ring.position.set(pinX, y + 0.14, pinZ);
     ring.userData.isPulseRing = true;
     this.highlightGroup.add(ring);
 
     // Floating 3D beacon pin
     const pinGroup = new THREE.Group();
-    pinGroup.position.set(cx, y + 3.2, cz);
+    pinGroup.position.set(pinX, y + 3.2, pinZ);
     pinGroup.userData.isBeaconPin = true;
     pinGroup.userData.baseY = y + 3.2;
 

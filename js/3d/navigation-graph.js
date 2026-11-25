@@ -64,12 +64,11 @@ export const FLOOR_CORRIDOR_LAYOUTS = {
     stairsEast: [2.7, -19.2],
     nodes: [
       { id: 'c-nw', x: -8.0, z: -19.2, label: 'North-West lobby' },
-      { id: 'c-ent', x: -8.0, z: -14.75, label: 'Main Entrance lobby' },
       { id: 'c-ne', x: -1.8, z: -14.75, label: 'Reception lobby' },
       { id: 'c-c1', x: -2.0, z:  -9.0, label: 'Central lobby (near Trophy Case)' },
       { id: 'c-w1', x: -8.0, z:  -9.0, label: 'West corridor junction' },
-      { id: 'c-w2', x: -8.0, z:   3.3, label: 'West corridor (near Marketing)' },
-      { id: 'c-w3', x: -8.0, z:  24.5, label: 'South-West corridor' },
+      { id: 'c-w2', x: -8.0, z:   3.3, label: 'West corridor (near Marketing Office)' },
+      { id: 'c-w3', x: -8.0, z:  24.5, label: 'Main Entrance foyer (between Marketing Office & Pharmacy)' },
       { id: 'c-e-toilet', x: 7.0, z: -19.21, label: 'North-East corridor (near Restrooms)' },
       { id: 'c-e0', x:  3.0, z:  -9.5, label: 'South of Reception' },
       { id: 'c-e1', x:  6.0, z:  -9.5, label: 'East corridor (near VU Law Clinic)' },
@@ -81,8 +80,7 @@ export const FLOOR_CORRIDOR_LAYOUTS = {
     links: [
       ['elev', 'stairsWest'], ['elev', 'stairsEast'],
       ['stairsWest', 'c-nw'], ['stairsEast', 'c-ne'], ['elev', 'c-c1'],
-      ['c-nw', 'c-ent'], ['c-ent', 'c-w1'], ['c-ent', 'c-ne'],
-      ['c-c1', 'c-w1'], ['c-c1', 'c-ne'], ['c-ne', 'c-e0'], ['c-e0', 'c-e1'], ['c-e1', 'c-e-toilet'],
+      ['c-nw', 'c-w1'], ['c-c1', 'c-w1'], ['c-c1', 'c-ne'], ['c-ne', 'c-e0'], ['c-e0', 'c-e1'], ['c-e1', 'c-e-toilet'],
       ['c-w1', 'c-w2'], ['c-w2', 'c-w3'],
       ['c-e1', 'c-e2'], ['c-e2', 'c-e3'], ['c-e3', 'c-e4'], ['c-e4', 'c-s0'],
     ],
@@ -272,7 +270,7 @@ export const FLOOR_CORRIDOR_LAYOUTS = {
     stairsWest: [-6.2, -21.2],
     stairsEast: [6.8, -21.2],
     nodes: [
-      { id: 'c-w0', x: -7.5, z: -21.2, label: 'West corridor (near Elevator)' },
+      { id: 'c-w0', x: -8.2, z: -21.53, label: 'West corridor toward Cafeteria entrance door' },
       { id: 'c-ne-t', x: 6.8, z: -25.2, label: 'North-East corridor (near Restrooms)' },
       { id: 'c-c1', x:  7.0, z: -19.0, label: 'Main Floor 9 corridor (Law Society)' },
       { id: 'c-c2', x:  7.0, z:  -5.0, label: 'Central corridor (Cafeteria / Program Admins)' },
@@ -456,7 +454,7 @@ export class NavigationGraph {
       const roomNodeId = `room:${rm.id}`;
       const doorNodeId = `door:${rm.id}`;
 
-      const [rx, rz] = rm.center;
+      const [rx, rz] = rm.pinPos || rm.center;
       const [dx, dz] = rm.door;
 
       this.addNode({

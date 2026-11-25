@@ -70,26 +70,58 @@ export class CameraController {
     this.transitionTo(pos, target, 0.75, instant);
   }
 
+  /**
+   * Computes the standard h1.png angled/isometric architectural overview for any floor (B2..9),
+   * adapting dynamically to the floor's actual geometry bounds and viewport aspect ratio.
+   */
+  getStandardFloorPose(floorCode) {
+    const y = this.building.getFloorY(floorCode);
+    const entry = this.building.floors.get(floorCode);
+    let minX = -16;
+    let maxX = 16;
+    let minZ = -27;
+    let maxZ = 27;
+    if (entry && entry.geom && Array.isArray(entry.geom.worldBounds)) {
+      [minX, minZ, maxX, maxZ] = entry.geom.worldBounds;
+    }
+    const cx = (minX + maxX) / 2;
+    const cz = (minZ + maxZ) / 2;
+    const width = Math.max(24, maxX - minX);
+    const depth = Math.max(40, maxZ - minZ);
+    const geomScale = Math.max(width / 32, depth / 54);
+    const aspect = this.camera.aspect || 1.4;
+    const aspectScale = aspect < 1.25 ? Math.min(1.38, 1.28 / Math.max(0.7, aspect)) : 1.0;
+    const s = geomScale * aspectScale;
+
+    const target = new THREE.Vector3(cx, y + 0.5, cz + 0.5);
+    const pos = new THREE.Vector3(
+      cx + 35 * s,
+      y + 31 * s,
+      cz + 44 * s
+    );
+    return { pos, target };
+  }
+
+  resetFloorView(floorCode, instant = false) {
+    const { pos, target } = this.getStandardFloorPose(floorCode);
+    this.transitionTo(pos, target, 0.75, instant);
+  }
+
   flyToFloor(floorCode, topDown = false) {
     if (topDown) {
       this.setMapView(floorCode);
       return;
     }
-    const y = this.building.getFloorY(floorCode);
-    const target = new THREE.Vector3(0, y + 0.5, 1.5);
-    const pos = new THREE.Vector3(39, y + 32, 50);
-    this.transitionTo(pos, target, 0.75);
+    this.resetFloorView(floorCode, false);
   }
 
   flyToRoom(roomData, topDown = false) {
     if (!roomData) return;
-    const y = this.building.getFloorY(roomData.floor);
-    const [cx, cz] = roomData.center;
-    const target = new THREE.Vector3(cx, y + 1.0, cz);
-    const pos = topDown
-      ? new THREE.Vector3(cx, y + 26, cz + 0.01)
-      : new THREE.Vector3(cx + 15, y + 14, cz + 18);
-    this.transitionTo(pos, target, 0.75);
+    if (topDown) {
+      this.setMapView(roomData.floor);
+      return;
+    }
+    this.resetFloorView(roomData.floor, false);
   }
 
   focusOnRouteStep(step) {

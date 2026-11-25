@@ -2963,6 +2963,67 @@ body.vu-3d-open {
   filter: brightness(1.05);
 }
 
+.vu3d-cancel-cta {
+  width: 100%;
+  background: transparent;
+  color: #e11d48;
+  border: 1.5px solid #fda4af;
+  border-radius: var(--radius-sm);
+  padding: 0.46rem 0.85rem;
+  font-family: inherit;
+  font-size: 0.78rem;
+  font-weight: 700;
+  cursor: pointer;
+  transition: all var(--transition);
+}
+
+.vu3d-cancel-cta:hover {
+  background: #ffe4e6;
+  border-color: #e11d48;
+}
+
+.vu3d-step-cancel {
+  color: #e11d48 !important;
+  border-color: #fda4af !important;
+}
+
+.vu3d-step-cancel:hover {
+  background: #e11d48 !important;
+  color: #ffffff !important;
+  border-color: #e11d48 !important;
+}
+
+.card-cancel-highlight {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.3rem;
+  align-self: flex-end;
+  margin-top: 0.45rem;
+  font-family: inherit;
+  font-size: 0.76rem;
+  font-weight: 700;
+  color: #e11d48;
+  background: #fff1f2;
+  border: 1px solid #fda4af;
+  padding: 0.3rem 0.8rem;
+  border-radius: var(--radius-full);
+  cursor: pointer;
+}
+
+[data-theme="dark"] .vu3d-cancel-cta,
+[data-theme="dark"] .card-cancel-highlight {
+  background: rgba(225, 29, 72, 0.14);
+  color: #fda4af;
+  border-color: rgba(244, 63, 94, 0.45);
+}
+
+[data-theme="dark"] .vu3d-cancel-cta:hover,
+[data-theme="dark"] .card-cancel-highlight:hover {
+  background: rgba(225, 29, 72, 0.28);
+  color: #ffffff;
+  border-color: #fb7185;
+}
+
 .vu3d-2d-link {
   text-align: center;
   font-size: 0.78rem;

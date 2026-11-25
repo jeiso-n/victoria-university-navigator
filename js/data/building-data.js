@@ -56,6 +56,10 @@ export function formatFloorLabel(floorCode) {
 // bounds: [xMin, zMin, xMax, zMax], door: [x, z]
 function r(id, room, name, floor, category, bounds, door, opts = {}) {
   const floorDef = FLOOR_MAP[floor];
+  const defaultCenter = [
+    Number(((bounds[0] + bounds[2]) / 2).toFixed(2)),
+    Number(((bounds[1] + bounds[3]) / 2).toFixed(2)),
+  ];
   return {
     id,
     room,
@@ -65,10 +69,9 @@ function r(id, room, name, floor, category, bounds, door, opts = {}) {
     levelIndex: floorDef ? floorDef.levelIndex : 0,
     category,
     bounds,
-    center: [
-      Number(((bounds[0] + bounds[2]) / 2).toFixed(2)),
-      Number(((bounds[1] + bounds[3]) / 2).toFixed(2)),
-    ],
+    subBounds: opts.subBounds || null,
+    center: opts.center || defaultCenter,
+    pinPos: opts.pinPos || null,
     door,
     aliases: opts.aliases || [],
     anchor: opts.anchor || `../directions.html#${id}`,
@@ -196,15 +199,15 @@ export const ENHANCED_ROOM_DB = [
   // GROUND FLOOR (G) — SVG: floors/ground-floor.svg
   // ════════════════════════════════════════════════════════════════
   r('main-entrance', 'Main Entrance', 'Main Entrance', 'G', 'facility',
-    [-16.0, -18.0, -11.0, -11.5], [-11.0, -14.75],
+    [-10.0, 22.0, -6.0, 27.0], [-8.0, 24.5],
     { svgLabel: 'Main Entrance', aliases: ['main entrance', 'entrance', 'main gate', 'lobby', 'start'], anchor: '../floors/floor-g.html',
       verificationStatus: 'verified-svg',
-      directionsText: 'Main Victoria University entrance on the Left (West) side of the Ground Floor near the Marketing Office and Reception lobby.' }),
+      directionsText: 'Main Victoria University entrance on the Ground Floor located between the Marketing Office and the Ground Floor Pharmacy.' }),
   r('ground-exit', 'Exit', 'Exit', 'G', 'facility',
     [3.5, 22.0, 8.5, 27.0], [6.0, 24.5],
     { svgLabel: 'Exit', aliases: ['exit', 'ground exit', 'building exit', 'way out', 'south exit'], anchor: '../floors/floor-g.html',
       verificationStatus: 'verified-svg',
-      directionsText: 'Ground Floor Exit located at the South-East corridor near the Art Gallery and Ground Floor Pharmacy.' }),
+      directionsText: 'Ground Floor Exit located at the South-East corridor between the Ground Floor Pharmacy and the Art Gallery.' }),
   r('reception', 'Reception', 'Reception', 'G', 'facility',
     [-1.8, -18.5, 3.6, -11.0], [-1.8, -14.75],
     { svgLabel: 'Reception', aliases: ['main reception', 'helpdesk', 'front desk'], image: 'images/reception.jpeg',
@@ -666,9 +669,17 @@ export const ENHANCED_ROOM_DB = [
   // FLOOR 9 — SVG: floors/floor-9-map.svg
   // ════════════════════════════════════════════════════════════════
   r('cafeteria', '901', 'Cafeteria', '9', 'social',
-    [-16.0, -9.91, 5.88, -1.08], [6.0, -5.0],
-    { svgLabel: 'Cafeteria', aliases: ['901', 'cafeteria', 'dining'], image: 'images/CAFETERIA.jpg',
-      directionsText: 'Take the elevator to Floor 9, turn right, inside glass doors.' }),
+    [-16.0, -27.0, 5.88, -1.08], [-10.0, -21.53],
+    { svgLabel: 'Cafeteria',
+      subBounds: [
+        [-16.0, -27.0, -10.0, -9.72],
+        [-16.0, -9.72, 5.88, -1.08],
+      ],
+      center: [-6.5, -5.4],
+      pinPos: [-10.35, -21.53],
+      aliases: ['901', 'cafeteria', 'cafe', 'café', 'canteen', 'dining', 'lounge & cafeteria'],
+      image: 'images/CAFETERIA.jpg',
+      directionsText: 'Take the elevator to Floor 9, turn right, and enter through the Cafeteria glass doors.' }),
   r('computer-lab-2', '903', 'Editing Suite / Computer Lab 2', '9', 'lab',
     [-16.0, -1.08, 0.0, 7.56], [-1.45, 7.56],
     { svgLabel: 'Computer lab 2', aliases: ['903', 'computer lab 2', 'editing suite', 'editting suite'], image: 'images/EDITING-SUITE.jpg',
@@ -735,15 +746,25 @@ export function findRoomByIdOrAlias(queryId) {
   ) || null;
 }
 
+function normalizeSearchToken(str) {
+  return String(str || '')
+    .normalize('NFD')
+    .replace(/[\u0300-\u036f]/g, '')
+    .toLowerCase()
+    .replace(/tt/g, 't')
+    .replace(/[-_\s]+/g, ' ')
+    .trim();
+}
+
 export function searchRooms(query) {
   const q = (query || '').trim().toLowerCase();
   if (!q) return [];
-  const qNorm = q.replace(/tt/g, 't').replace(/[-_\s]+/g, ' ');
+  const qNorm = normalizeSearchToken(q);
   return ENHANCED_ROOM_DB.filter(rm => {
     const fields = [rm.name, rm.room, rm.id, rm.floor, rm.category, ...(rm.aliases || [])];
     return fields.some(val => {
       const s = String(val).toLowerCase();
-      return s.includes(q) || s.replace(/tt/g, 't').replace(/[-_\s]+/g, ' ').includes(qNorm);
+      return s.includes(q) || normalizeSearchToken(s).includes(qNorm);
     });
   });
 }

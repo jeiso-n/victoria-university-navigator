@@ -120,7 +120,7 @@ test('Verified SVG room doorway and entry edges have zero unpermitted solid wall
     if (rm.floor === '9') doors.push({ cx: 7.0, cz: 16.2, width: 2.0, orient: 'H' });
     if (rm.floor === 'G') {
       doors.push(
-        { cx: -16.0, cz: -14.75, width: 4.5, orient: 'V' },
+        { cx: -8.0, cz: 27.0, width: 4.0, orient: 'H' },
         { cx: 6.0, cz: 27.0, width: 4.5, orient: 'H' }
       );
     }
@@ -286,26 +286,62 @@ test('Navigation instructions contain zero distance measurements', () => {
   }
 });
 
-test('Ground Floor Main Entrance is on the left side near Marketing Office and old entrance is now Exit', () => {
+test('Ground Floor Main Entrance is between Marketing Office and Ground Floor Pharmacy and old entrance is Exit', () => {
   const entrance = findRoomByIdOrAlias('main-entrance');
   const exit = findRoomByIdOrAlias('ground-exit');
   const marketing = findRoomByIdOrAlias('marketing-office');
-  assert.ok(entrance && exit && marketing);
+  const pharmacy = findRoomByIdOrAlias('g-pharmacy');
+  assert.ok(entrance && exit && marketing && pharmacy);
   assert.equal(entrance.name, 'Main Entrance');
   assert.equal(entrance.floor, 'G');
-  // Main Entrance must be on the Left (West) side (X < -10) near Marketing Office
-  assert.deepEqual(entrance.bounds, [-16.0, -18.0, -11.0, -11.5]);
-  assert.deepEqual(entrance.door, [-11.0, -14.75]);
+  // Main Entrance [-10, 22, -6, 27] must sit directly between Marketing Office (xMax = -10) and Ground Floor Pharmacy (xMin = -6)
+  assert.deepEqual(entrance.bounds, [-10.0, 22.0, -6.0, 27.0]);
+  assert.deepEqual(entrance.door, [-8.0, 24.5]);
+  assert.equal(entrance.bounds[0], marketing.bounds[2]);
+  assert.equal(entrance.bounds[2], pharmacy.bounds[0]);
   // Exit must be at the old South-East entrance position [3.5, 22.0, 8.5, 27.0]
   assert.equal(exit.name, 'Exit');
   assert.equal(exit.floor, 'G');
   assert.deepEqual(exit.bounds, [3.5, 22.0, 8.5, 27.0]);
   assert.deepEqual(exit.door, [6.0, 24.5]);
-  // Verify routing from Main Entrance to Exit and Marketing Office
+  // Verify routing from Main Entrance to Exit, Marketing Office, and Pharmacy
   const toExit = pathfinder.findRoute('main-entrance', 'ground-exit', { mode: 'elevator' });
   const toMarketing = pathfinder.findRoute('main-entrance', 'marketing-office', { mode: 'elevator' });
+  const toPharmacy = pathfinder.findRoute('main-entrance', 'g-pharmacy', { mode: 'elevator' });
   assert.ok(toExit && toExit.path.length >= 3);
   assert.ok(toMarketing && toMarketing.path.length >= 3);
+  assert.ok(toPharmacy && toPharmacy.path.length >= 3);
+});
+
+test('Cafeteria covers entire L-shaped green-annotated area, anchors pin at actual glass door (-10, -21.53), and resolves all aliases', () => {
+  const cafe = findRoomByIdOrAlias('cafeteria');
+  assert.ok(cafe);
+  assert.deepEqual(cafe.subBounds, [
+    [-16.0, -27.0, -10.0, -9.72],
+    [-16.0, -9.72, 5.88, -1.08],
+  ]);
+  assert.deepEqual(cafe.door, [-10.0, -21.53]);
+  assert.deepEqual(cafe.pinPos, [-10.35, -21.53]);
+
+  for (const alias of ['Cafeteria', 'Cafe', 'Café', 'Canteen']) {
+    const matches = searchRooms(alias);
+    assert.ok(matches.some(r => r.id === 'cafeteria'), `Alias "${alias}" failed to return cafeteria`);
+  }
+
+  for (const startId of ['main-entrance', 'room-305', 'dance']) {
+    const route = pathfinder.findRoute(startId, 'cafeteria', { mode: 'elevator' });
+    assert.ok(route && route.path.length >= 4, `Failed to compute route from ${startId} to cafeteria`);
+    const doorNode = route.path[route.path.length - 2];
+    const endNode = route.path[route.path.length - 1];
+    assert.equal(doorNode.id, 'door:cafeteria');
+    assert.deepEqual([doorNode.x, doorNode.z], [-10.0, -21.53]);
+    assert.deepEqual([endNode.x, endNode.z], [-10.35, -21.53]);
+    const finalStep = route.steps[route.steps.length - 1];
+    assert.ok(
+      finalStep.instruction.includes('Cafeteria entrance door'),
+      `Expected final instruction to mention Cafeteria entrance door, got: ${finalStep.instruction}`
+    );
+  }
 });
 
 test('Restroom, Toilet, and Washroom search returns all 8 SVG-verified restrooms with working cross-floor routes', () => {

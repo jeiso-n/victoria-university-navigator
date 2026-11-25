@@ -124,17 +124,17 @@ export class BuildingGenerator {
     this.plazaMesh = plaza;
     this.groundPlazaGroup.add(plaza);
 
-    // West approach walkway leading to Main Entrance on Left Side (X = -16..-28, Z = -14.75)
+    // Front approach walkway leading to Main Entrance (between Marketing Office & Pharmacy at X = -8.0, Z = +27..+38)
     const walkwayMat = new THREE.MeshStandardMaterial({ color: 0xcbd5e1, roughness: 0.85 });
     const mainWalkway = new THREE.Mesh(
-      new THREE.BoxGeometry(12, 0.06, 8),
+      new THREE.BoxGeometry(8, 0.06, 11),
       walkwayMat
     );
-    mainWalkway.position.set(-BUILDING_WIDTH / 2 - 6, -0.28, -14.75);
+    mainWalkway.position.set(-8.0, -0.28, BUILDING_DEPTH / 2 + 5.5);
     this.walkwayMesh = mainWalkway;
     this.groundPlazaGroup.add(mainWalkway);
 
-    // South walkway leading from Exit (X = +6.0, Z = +27..+38)
+    // South-East walkway leading from Exit (X = +6.0, Z = +27..+38)
     const exitWalkway = new THREE.Mesh(
       new THREE.BoxGeometry(9, 0.06, 11),
       walkwayMat

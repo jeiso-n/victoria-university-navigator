@@ -140,7 +140,7 @@ const ROOM_DB = [
   { id:'quality-assurance',room:'—', name:'Quality Assurance Office',       floor:'8', anchor:'../directions.html#quality-assurance' },
   { id:'restroom-8',       room:'Restroom', name:'Floor 8 Restrooms (Toilets)', floor:'8', anchor:'../floors/floor-8.html', aliases:['restroom', 'restrooms', 'toilet', 'toilets', 'washroom', 'washrooms', 'ladies toilets', 'men toilets'] },
   // Floor 9
-  { id:'cafeteria',     room:'901', name:'Cafeteria',          floor:'9', anchor:'../directions.html#cafeteria' },
+  { id:'cafeteria',     room:'901', name:'Cafeteria', aliases:['cafe', 'café', 'canteen', 'dining'], floor:'9', anchor:'../directions.html#cafeteria' },
   { id:'room-902',      room:'902', name:'Library',            floor:'9', anchor:'../directions.html#room-902' },
   { id:'computer-lab-2',room:'903', name:'Editing Suite/ Computer lab 2', aliases:['Editting Suite/ Computer lab 2', 'Editing Suite', 'Editting Suite', 'Computer Lab 2', 'Computer lab 2'], floor:'9', anchor:'../directions.html#computer-lab-2' },
   { id:'room-904',      room:'904', name:'IT Room',            floor:'9', anchor:'../directions.html#room-904' },
@@ -199,17 +199,21 @@ function initSearch() {
     results.classList.add('open');
   }
 
+  function normText(str) {
+    return String(str || '').normalize('NFD').replace(/[\u0300-\u036f]/g, '').toLowerCase().replace(/tt/g, 't');
+  }
+
   input.addEventListener('input', () => {
     const q = input.value.trim().toLowerCase();
     if (!q) { results.classList.remove('open'); return; }
-    const qNorm = q.replace(/tt/g, 't');
+    const qNorm = normText(q);
     const matches = ROOM_DB.filter(r =>
       r.name.toLowerCase().includes(q) ||
-      r.name.toLowerCase().replace(/tt/g, 't').includes(qNorm) ||
+      normText(r.name).includes(qNorm) ||
       r.room.toLowerCase().includes(q) ||
       r.floor.toLowerCase().includes(q) ||
       r.id.toLowerCase().includes(q) ||
-      (r.aliases && r.aliases.some(a => a.toLowerCase().includes(q) || a.toLowerCase().replace(/tt/g, 't').includes(qNorm)))
+      (r.aliases && r.aliases.some(a => a.toLowerCase().includes(q) || normText(a).includes(qNorm)))
     );
     render(matches);
   });
@@ -274,13 +278,30 @@ function initToggle() {
 let _activeHighlight = null;
 let _highlightObserver = null;
 
+function clearActiveHighlight() {
+  if (_activeHighlight) {
+    _activeHighlight.classList.remove('highlighted');
+    const cancelBtn = _activeHighlight.querySelector('.card-cancel-highlight');
+    if (cancelBtn) cancelBtn.remove();
+    _activeHighlight = null;
+  }
+  if (_highlightObserver) {
+    _highlightObserver.disconnect();
+    _highlightObserver = null;
+  }
+  if (window.location.hash) {
+    history.replaceState(null, '', window.location.pathname + window.location.search);
+  }
+}
+
+window.__VU_CLEAR_2D_SELECTION__ = clearActiveHighlight;
+
 function triggerHighlight(hash) {
   if (!hash) return;
   const target = document.querySelector(hash);
   if (target && target.classList.contains('direction-card')) {
-    // Remove any previous highlight
     if (_activeHighlight && _activeHighlight !== target) {
-      _activeHighlight.classList.remove('highlighted');
+      clearActiveHighlight();
     }
     if (_highlightObserver) {
       _highlightObserver.disconnect();
@@ -288,6 +309,18 @@ function triggerHighlight(hash) {
     }
 
     target.classList.add('highlighted');
+    if (!target.querySelector('.card-cancel-highlight')) {
+      const clearBtn = document.createElement('button');
+      clearBtn.type = 'button';
+      clearBtn.className = 'card-cancel-highlight';
+      clearBtn.textContent = '✕ Clear Selection';
+      clearBtn.addEventListener('click', (e) => {
+        e.preventDefault();
+        e.stopPropagation();
+        clearActiveHighlight();
+      });
+      target.appendChild(clearBtn);
+    }
     target.scrollIntoView({ behavior: 'smooth', block: 'center' });
     _activeHighlight = target;
 
@@ -295,10 +328,7 @@ function triggerHighlight(hash) {
     _highlightObserver = new IntersectionObserver((entries) => {
       entries.forEach(entry => {
         if (!entry.isIntersecting) {
-          target.classList.remove('highlighted');
-          _highlightObserver.disconnect();
-          _highlightObserver = null;
-          _activeHighlight = null;
+          clearActiveHighlight();
         }
       });
     }, { threshold: 0.05 });

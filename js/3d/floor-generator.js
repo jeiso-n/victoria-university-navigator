@@ -321,7 +321,7 @@ export function buildFloorGroup(floorDef, floorGeom) {
     const subSegs = isExt
       ? (floorDef.code === 'G'
           ? splitWallAtDoors(wall, [
-              { cx: -16.0, cz: -14.75, width: 4.5, orient: 'V' },
+              { cx: -8.0, cz: 27.0, width: 4.0, orient: 'H' },
               { cx: 6.0, cz: 27.0, width: 4.5, orient: 'H' },
             ])
           : [wall])
@@ -393,25 +393,25 @@ export function buildFloorGroup(floorDef, floorGeom) {
     group.add(doorGroup);
   }
 
-  // Ground Floor Main Entrance (Left/West side near Marketing Office at X=-16, Z=-14.75)
+  // Ground Floor Main Entrance (between Marketing Office and Ground Floor Pharmacy at X=-8, Z=+27)
   // and Exit Portal (old South-East entrance position at X=+6, Z=+27)
   if (floorDef.code === 'G') {
     const entrancePortal = new THREE.Group();
     entrancePortal.name = 'main-entrance-portal';
-    entrancePortal.position.set(-16.0, 0, -14.75);
+    entrancePortal.position.set(-8.0, 0, 27.0);
     entrancePortal.userData = { isMainEntrancePortal: true, labelText: 'Main Entrance' };
     const entCanopy = new THREE.Mesh(
-      new THREE.BoxGeometry(3.2, 0.28, 6.8),
+      new THREE.BoxGeometry(6.4, 0.28, 3.2),
       new THREE.MeshStandardMaterial({ color: 0x1b365d, roughness: 0.4, metalness: 0.4 })
     );
-    entCanopy.position.set(-1.6, 3.3, 0);
+    entCanopy.position.set(0, 3.3, 1.6);
     const entMatWelcome = new THREE.Mesh(
-      new THREE.BoxGeometry(3.4, 0.05, 4.8),
+      new THREE.BoxGeometry(4.4, 0.05, 3.4),
       new THREE.MeshStandardMaterial({ color: 0x059669, roughness: 0.7 })
     );
-    entMatWelcome.position.set(-0.6, 0.03, 0);
-    const entranceSprite = createLabelSprite('Main Entrance', 'Ground Floor · Near Marketing Office', '#059669');
-    entranceSprite.position.set(-2.0, 4.1, 0);
+    entMatWelcome.position.set(0, 0.03, 0.6);
+    const entranceSprite = createLabelSprite('Main Entrance', 'Between Marketing & Pharmacy', '#059669');
+    entranceSprite.position.set(0, 4.1, 2.0);
     labelSprites.push(entranceSprite);
     entrancePortal.add(entCanopy, entMatWelcome, entranceSprite);
     group.add(entrancePortal);
@@ -929,12 +929,6 @@ export function buildFloorGroup(floorDef, floorGeom) {
   // 6. Individual Rooms from ENHANCED_ROOM_DB for this floor
   const floorRooms = ENHANCED_ROOM_DB.filter(rm => rm.floor === floorDef.code);
   for (const rm of floorRooms) {
-    const [rx1, rz1, rx2, rz2] = rm.bounds;
-    const rw = Math.max(1.2, rx2 - rx1 - 0.28);
-    const rd = Math.max(1.2, rz2 - rz1 - 0.28);
-    const cx = (rx1 + rx2) / 2;
-    const cz = (rz1 + rz2) / 2;
-
     const isRestroom = rm.id.startsWith('restroom-');
     const isExit = rm.id === 'ground-exit';
     const baseColor = isRestroom
@@ -942,35 +936,53 @@ export function buildFloorGroup(floorDef, floorGeom) {
       : isExit
         ? 0xe11d48
         : (CATEGORY_COLORS[rm.category] || 0x00a0df);
-    const roomPlateGeo = new THREE.BoxGeometry(rw, 0.09, rd);
-    const roomPlateMat = new THREE.MeshStandardMaterial({
-      color: baseColor,
-      transparent: true,
-      opacity: rm.verificationStatus === 'under-construction' ? 0.35 : (isRestroom ? 0.34 : 0.26),
-      roughness: 0.65,
-    });
-    const roomPlate = new THREE.Mesh(roomPlateGeo, roomPlateMat);
-    roomPlate.position.set(cx, 0.05, cz);
-    roomPlate.userData = {
-      isRoomMesh: true,
-      roomId: rm.id,
-      roomData: rm,
-      baseColor,
-      baseOpacity: roomPlateMat.opacity,
-    };
-    group.add(roomPlate);
-    roomMeshes.push(roomPlate);
 
-    // Subtle wireframe outline on floor plate
-    const edgeGeo = new THREE.EdgesGeometry(new THREE.BoxGeometry(rw, 0.11, rd));
-    const edgeMat = new THREE.LineBasicMaterial({
-      color: baseColor,
-      transparent: true,
-      opacity: 0.45,
-    });
-    const edgeLines = new THREE.LineSegments(edgeGeo, edgeMat);
-    edgeLines.position.copy(roomPlate.position);
-    group.add(edgeLines);
+    const boxes = Array.isArray(rm.subBounds) && rm.subBounds.length > 0 ? rm.subBounds : [rm.bounds];
+    const companionMeshes = [];
+
+    for (const [rx1, rz1, rx2, rz2] of boxes) {
+      const rw = Math.max(1.2, rx2 - rx1 - 0.28);
+      const rd = Math.max(1.2, rz2 - rz1 - 0.28);
+      const bCx = (rx1 + rx2) / 2;
+      const bCz = (rz1 + rz2) / 2;
+
+      const roomPlateGeo = new THREE.BoxGeometry(rw, 0.09, rd);
+      const roomPlateMat = new THREE.MeshStandardMaterial({
+        color: baseColor,
+        transparent: true,
+        opacity: rm.verificationStatus === 'under-construction' ? 0.35 : (isRestroom ? 0.34 : 0.26),
+        roughness: 0.65,
+      });
+      const roomPlate = new THREE.Mesh(roomPlateGeo, roomPlateMat);
+      roomPlate.position.set(bCx, 0.05, bCz);
+      roomPlate.userData = {
+        isRoomMesh: true,
+        roomId: rm.id,
+        roomData: rm,
+        baseColor,
+        baseOpacity: roomPlateMat.opacity,
+        companionMeshes,
+      };
+      companionMeshes.push(roomPlate);
+      group.add(roomPlate);
+      roomMeshes.push(roomPlate);
+
+      // Subtle wireframe outline on floor plate
+      const edgeGeo = new THREE.EdgesGeometry(new THREE.BoxGeometry(rw, 0.11, rd));
+      const edgeMat = new THREE.LineBasicMaterial({
+        color: baseColor,
+        transparent: true,
+        opacity: 0.45,
+      });
+      const edgeLines = new THREE.LineSegments(edgeGeo, edgeMat);
+      edgeLines.position.copy(roomPlate.position);
+      group.add(edgeLines);
+    }
+
+    const [rx1, rz1, rx2, rz2] = rm.bounds;
+    const rw = Math.max(1.2, rx2 - rx1 - 0.28);
+    const rd = Math.max(1.2, rz2 - rz1 - 0.28);
+    const [cx, cz] = rm.center;
 
     // Room floating label
     const accentHex = `#${baseColor.toString(16).padStart(6, '0')}`;
