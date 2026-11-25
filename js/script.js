@@ -154,9 +154,10 @@ function initSearch() {
   let filtered    = [];
 
   function floorLabel(r) {
-    if (r.floorClass === 'basement') return `B${r.floor.replace('B','')}`;
-    if (r.floorClass === 'ground')   return 'G';
-    return `Fl ${r.floor}`;
+    if (r.floor === 'B2') return 'Basement 2';
+    if (r.floor === 'B1') return 'Basement 1';
+    if (r.floor === 'G')  return 'Ground Floor';
+    return `Floor ${r.floor}`;
   }
 
   function render(items) {
@@ -175,12 +176,13 @@ function initSearch() {
         const cleanAnchor = r.anchor.replace(/^\.\.\//, '');
         href = isSubdir ? `../${cleanAnchor}` : `./${cleanAnchor}`;
       }
+      const flName = floorLabel(r);
       return `
       <a class="search-result-item" href="${href}" data-idx="${i}">
-        <span class="search-result-floor ${r.floorClass || ''}">${floorLabel(r)}</span>
+        <span class="search-result-floor ${r.floorClass || ''}">${flName}</span>
         <div class="search-result-info">
           <div class="search-result-name">${r.name}</div>
-          <div class="search-result-desc">Room ${r.room} · Floor ${r.floor}</div>
+          <div class="search-result-desc">Room ${r.room} · ${flName}</div>
         </div>
         <span class="search-result-go">Go →</span>
       </a>`;
@@ -471,6 +473,13 @@ function initFloorMapLinks() {
 }
 
 document.addEventListener('DOMContentLoaded', () => {
+  try {
+    const savedTheme = localStorage.getItem('vu_theme_v1');
+    if (savedTheme === 'dark') {
+      document.documentElement.setAttribute('data-theme', 'dark');
+      document.body.classList.add('dark-mode');
+    }
+  } catch (_) {}
   initSearch();
   initToggle();
   initAnchorHighlight();

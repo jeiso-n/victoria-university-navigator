@@ -2684,16 +2684,20 @@ body.vu-3d-open {
 }
 
 .vu3d-res-floor {
-  min-width: 30px;
-  height: 30px;
+  min-width: 82px;
+  height: auto;
+  padding: 4px 8px;
   border-radius: 6px;
   background: var(--vu-navy);
   color: #ffffff;
-  font-size: 0.72rem;
+  font-size: 0.68rem;
   font-weight: 800;
   display: inline-flex;
   align-items: center;
   justify-content: center;
+  text-align: center;
+  white-space: nowrap;
+  flex-shrink: 0;
 }
 
 .vu3d-res-floor.basement { background: #475569; }
@@ -2967,16 +2971,18 @@ body.vu-3d-open {
 }
 
 .vu3d-step-fl {
-  min-width: 26px;
-  height: 22px;
+  min-width: 78px;
+  height: auto;
+  padding: 3px 7px;
   border-radius: 4px;
   background: var(--vu-navy);
   color: #ffffff;
-  font-size: 0.68rem;
+  font-size: 0.66rem;
   font-weight: 800;
   display: inline-flex;
   align-items: center;
   justify-content: center;
+  white-space: nowrap;
   flex-shrink: 0;
 }
 
@@ -3041,27 +3047,31 @@ body.vu-3d-open {
   display: flex;
   flex-direction: column;
   gap: 4px;
-  background: rgba(255, 255, 255, 0.92);
+  background: rgba(255, 255, 255, 0.94);
   padding: 6px;
   border-radius: var(--radius-md);
   border: 1px solid var(--border);
   box-shadow: var(--shadow-md);
   z-index: 25;
-  max-height: calc(100% - 90px);
+  max-height: calc(100% - 96px);
   overflow-y: auto;
 }
 
 .vu3d-floor-pill {
-  min-width: 40px;
-  height: 28px;
+  position: relative;
+  min-width: 96px;
+  height: 27px;
+  padding: 0 9px;
   border-radius: 6px;
   border: 1px solid var(--border);
   background: #ffffff;
   color: var(--vu-navy);
   font-family: inherit;
-  font-size: 0.72rem;
+  font-size: 0.7rem;
   font-weight: 800;
   cursor: pointer;
+  white-space: nowrap;
+  text-align: center;
   transition: all var(--transition);
 }
 
@@ -3079,6 +3089,35 @@ body.vu-3d-open {
 .vu3d-floor-pill.in-route:not(.active) {
   border-color: var(--vu-orange);
   box-shadow: inset 0 0 0 1px var(--vu-orange);
+}
+
+.vu3d-floor-pill.has-pinned-dest::after {
+  content: '📍';
+  font-size: 0.65rem;
+  margin-left: 4px;
+}
+
+.vu3d-floor-stepper {
+  position: absolute;
+  left: 14px;
+  bottom: 72px;
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  background: rgba(255, 255, 255, 0.94);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-full);
+  padding: 4px 8px;
+  box-shadow: var(--shadow-md);
+  z-index: 24;
+}
+
+.vu3d-current-floor-pill {
+  font-size: 0.76rem;
+  font-weight: 800;
+  color: var(--vu-navy);
+  padding: 0 6px;
+  white-space: nowrap;
 }
 
 .vu3d-legend-chip {
@@ -3251,4 +3290,297 @@ body.vu-3d-open {
     padding: 0.34rem 0.62rem;
     font-size: 0.7rem;
   }
+
+  .vu3d-floor-rail {
+    right: 6px;
+    padding: 4px;
+  }
+
+  .vu3d-floor-pill {
+    min-width: 78px;
+    font-size: 0.64rem;
+    height: 24px;
+    padding: 0 5px;
+  }
+
+  .vu3d-floor-stepper {
+    left: 10px;
+    bottom: 66px;
+  }
+}
+
+/* ==========================================================================
+   THEME TOGGLE, PINNED BANNER & COMPLETE DARK MODE
+   ========================================================================== */
+.vu-theme-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.3rem;
+  border: 1.5px solid var(--border);
+  background: var(--bg-subtle);
+  color: var(--vu-navy);
+  font-family: inherit;
+  font-size: 0.74rem;
+  font-weight: 800;
+  padding: 0.4rem 0.75rem;
+  border-radius: var(--radius-full);
+  cursor: pointer;
+  white-space: nowrap;
+  transition: all var(--transition);
+}
+
+.vu-theme-btn:hover {
+  border-color: var(--vu-blue);
+  color: var(--vu-blue);
+}
+
+.vu-theme-btn.is-dark {
+  background: #1e293b;
+  color: #fde047;
+  border-color: #334155;
+}
+
+.vu3d-pinned-banner {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.5rem;
+  background: #fff7ed;
+  border: 1px solid #fdba74;
+  color: #9a3412;
+  border-radius: var(--radius-sm);
+  padding: 0.45rem 0.6rem;
+  font-size: 0.74rem;
+  margin-bottom: 0.65rem;
+}
+
+.vu3d-jump-pinned {
+  background: var(--vu-orange);
+  color: #ffffff;
+  border: none;
+  border-radius: 6px;
+  padding: 0.25rem 0.55rem;
+  font-size: 0.7rem;
+  font-weight: 700;
+  cursor: pointer;
+  white-space: nowrap;
+}
+
+.vu3d-result-item.selected-dest {
+  border-color: var(--vu-orange);
+  background: #fff7ed;
+}
+
+.search-result-floor {
+  min-width: 82px !important;
+  padding: 3px 7px !important;
+  white-space: nowrap !important;
+}
+
+/* --- Complete Dark Mode Tokens & Overrides --- */
+[data-theme="dark"],
+body.dark-mode {
+  --bg-page: #0b1325;
+  --bg-surface: #111c33;
+  --bg-subtle: #182644;
+  --bg-card: #111c33;
+  --text-primary: #f1f5f9;
+  --text-secondary: #cbd5e1;
+  --text-muted: #94a3b8;
+  --text-light: #64748b;
+  --border: #253553;
+  --vu-navy: #e2e8f0;
+  --vu-blue-light: rgba(56, 189, 248, 0.14);
+  --vu-blue-border: rgba(56, 189, 248, 0.35);
+  background-color: #0b1325;
+  color: #f1f5f9;
+}
+
+[data-theme="dark"] header,
+body.dark-mode header {
+  background: rgba(15, 23, 42, 0.94);
+  border-bottom-color: #253553;
+}
+
+[data-theme="dark"] .site-nav a,
+[data-theme="dark"] .brand-title,
+[data-theme="dark"] .nav-hamburger,
+[data-theme="dark"] .floor-heading,
+[data-theme="dark"] .direction-card h2,
+[data-theme="dark"] .action-card h3,
+[data-theme="dark"] .info-card h3,
+[data-theme="dark"] .facility-card h3 {
+  color: #f1f5f9;
+}
+
+[data-theme="dark"] .hero-search-section,
+[data-theme="dark"] .floor-selector,
+[data-theme="dark"] .quick-index,
+[data-theme="dark"] .directions-intro,
+[data-theme="dark"] .direction-card,
+[data-theme="dark"] .action-card,
+[data-theme="dark"] .info-card,
+[data-theme="dark"] .facility-card,
+[data-theme="dark"] .content-panel,
+[data-theme="dark"] .tips-panel,
+[data-theme="dark"] .building-info,
+[data-theme="dark"] .svg-map-container,
+[data-theme="dark"] .search-results,
+[data-theme="dark"] .nav-drawer,
+[data-theme="dark"] .room-card,
+[data-theme="dark"] .guide-office-card,
+[data-theme="dark"] .guide-list > a,
+[data-theme="dark"] .guide-list > div {
+  background: #111c33;
+  border-color: #253553;
+  color: #f1f5f9;
+}
+
+[data-theme="dark"] .floor-btn,
+[data-theme="dark"] .toggle-btn,
+[data-theme="dark"] #globalSearch,
+[data-theme="dark"] .header-search-wrapper #globalSearch,
+[data-theme="dark"] select,
+[data-theme="dark"] input[type="search"] {
+  background: #182644;
+  border-color: #2e4268;
+  color: #f1f5f9;
+}
+
+[data-theme="dark"] .room-table th {
+  background: #182644;
+  color: #f1f5f9;
+  border-color: #253553;
+}
+
+[data-theme="dark"] .room-table td {
+  border-color: #253553;
+  color: #cbd5e1;
+}
+
+[data-theme="dark"] .vu-mode-toggle {
+  background: #182644;
+  border-color: #2e4268;
+}
+
+[data-theme="dark"] .vu-mode-btn {
+  color: #cbd5e1;
+}
+
+[data-theme="dark"] .vu-mode-btn:not(.active):hover {
+  background: #253553;
+  color: #38bdf8;
+}
+
+[data-theme="dark"] .vu-3d-overlay,
+[data-theme="dark"] .vu3d-loader {
+  background: #0b1325;
+  color: #f1f5f9;
+}
+
+[data-theme="dark"] .vu3d-topbar,
+[data-theme="dark"] .vu3d-left-panel,
+[data-theme="dark"] .vu3d-webgl-fallback {
+  background: #111c33;
+  border-color: #253553;
+  color: #f1f5f9;
+}
+
+[data-theme="dark"] .vu3d-brand-badge strong,
+[data-theme="dark"] .vu3d-label,
+[data-theme="dark"] .vu3d-room-header h3,
+[data-theme="dark"] .vu3d-directions-header strong,
+[data-theme="dark"] .vu3d-current-floor-pill,
+[data-theme="dark"] .vu3d-webgl-fallback h3 {
+  color: #f1f5f9;
+}
+
+[data-theme="dark"] .vu3d-panel-section,
+[data-theme="dark"] .vu3d-selected-card,
+[data-theme="dark"] .vu3d-route-setup select {
+  border-color: #253553;
+}
+
+[data-theme="dark"] .vu3d-view-btn,
+[data-theme="dark"] .vu3d-vmode,
+[data-theme="dark"] .vu3d-clear-route,
+[data-theme="dark"] .vu3d-step-nav,
+[data-theme="dark"] .vu3d-route-setup select,
+[data-theme="dark"] #vu3d-search-input,
+[data-theme="dark"] .vu3d-result-item,
+[data-theme="dark"] .vu3d-step-item {
+  background: #182644;
+  border-color: #2e4268;
+  color: #e2e8f0;
+}
+
+[data-theme="dark"] .vu3d-view-btn.active,
+[data-theme="dark"] .vu3d-vmode.active,
+[data-theme="dark"] .vu3d-step-item.active {
+  background: rgba(0, 160, 223, 0.24);
+  border-color: #38bdf8;
+  color: #ffffff;
+}
+
+[data-theme="dark"] .vu3d-floor-rail,
+[data-theme="dark"] .vu3d-legend-chip,
+[data-theme="dark"] .vu3d-bottom-bar,
+[data-theme="dark"] .vu3d-floor-stepper {
+  background: rgba(17, 28, 51, 0.94);
+  border-color: #2e4268;
+  color: #e2e8f0;
+}
+
+[data-theme="dark"] .vu3d-floor-pill {
+  background: #182644;
+  border-color: #2e4268;
+  color: #e2e8f0;
+}
+
+[data-theme="dark"] .vu3d-floor-pill:hover {
+  background: #253553;
+  border-color: #38bdf8;
+}
+
+[data-theme="dark"] .vu3d-floor-pill.active {
+  background: #00a0df;
+  color: #ffffff;
+  border-color: #38bdf8;
+}
+
+[data-theme="dark"] .vu3d-step-text,
+[data-theme="dark"] .vu3d-room-dir,
+[data-theme="dark"] .vu3d-res-meta strong {
+  color: #f1f5f9;
+}
+
+[data-theme="dark"] .vu3d-2d-link {
+  color: #38bdf8;
+}
+
+[data-theme="dark"] .vu3d-pinned-banner,
+[data-theme="dark"] .vu3d-result-item.selected-dest {
+  background: rgba(255, 103, 31, 0.16);
+  border-color: rgba(255, 103, 31, 0.5);
+  color: #fed7aa;
+}
+
+[data-theme="dark"] .vu3d-step-item.notice,
+[data-theme="dark"] .vu3d-ver-note {
+  background: rgba(245, 158, 11, 0.14);
+  border-color: rgba(245, 158, 11, 0.45);
+  color: #fde68a;
+}
+
+[data-theme="dark"] .vu3d-badge.verified {
+  background: rgba(16, 185, 129, 0.18);
+  color: #6ee7b7;
+}
+[data-theme="dark"] .vu3d-badge.est {
+  background: rgba(245, 158, 11, 0.18);
+  color: #fcd34d;
+}
+[data-theme="dark"] .vu3d-badge.warn {
+  background: rgba(239, 68, 68, 0.2);
+  color: #fca5a5;
 }

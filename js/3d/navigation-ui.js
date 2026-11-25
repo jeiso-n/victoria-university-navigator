@@ -10,9 +10,11 @@ import {
   AUDIT_SUMMARY,
   findRoomByIdOrAlias,
   searchRooms,
+  formatFloorLabel,
 } from '../data/building-data.js';
 
 const STORAGE_KEY = 'vu_nav_state_v1';
+const THEME_KEY = 'vu_theme_v1';
 
 function detectBasePath() {
   const path = window.location.pathname;
@@ -58,36 +60,91 @@ class NavigatorController {
     this.currentRoute = null;
     this.activeStepIdx = 0;
     this.walkthroughTimer = null;
+    this.theme = this.readSavedTheme();
 
     this.overlayEl = null;
+    this.applyTheme(this.theme);
     this.mountToggle();
     this.enhance2DPages();
     this.restoreFromUrlOrState();
   }
 
+  readSavedTheme() {
+    try {
+      return localStorage.getItem(THEME_KEY) === 'dark' ? 'dark' : 'light';
+    } catch (_) {
+      return 'light';
+    }
+  }
+
+  applyTheme(theme) {
+    this.theme = theme === 'dark' ? 'dark' : 'light';
+    const isDark = this.theme === 'dark';
+    document.documentElement.setAttribute('data-theme', this.theme);
+    document.body.classList.toggle('dark-mode', isDark);
+    try {
+      localStorage.setItem(THEME_KEY, this.theme);
+    } catch (_) {}
+
+    const label = isDark ? '☀️ Light' : '🌙 Dark';
+    const aria = isDark ? 'Switch to Light Mode' : 'Switch to Dark Mode';
+    [document.getElementById('vu-theme-toggle'), document.getElementById('vu3d-theme-toggle')].forEach(btn => {
+      if (!btn) return;
+      btn.textContent = label;
+      btn.setAttribute('aria-label', aria);
+      btn.setAttribute('title', aria);
+      btn.classList.toggle('is-dark', isDark);
+    });
+
+    if (this.sceneManager) {
+      this.sceneManager.setTheme(isDark);
+    }
+  }
+
+  toggleTheme() {
+    this.applyTheme(this.theme === 'dark' ? 'light' : 'dark');
+  }
+
   mountToggle() {
     const headerInner = document.querySelector('header .header-inner');
-    if (!headerInner || document.getElementById('vu-mode-toggle')) return;
+    if (!headerInner) return;
 
-    const toggle = document.createElement('div');
-    toggle.id = 'vu-mode-toggle';
-    toggle.className = 'vu-mode-toggle';
-    toggle.setAttribute('role', 'group');
-    toggle.setAttribute('aria-label', 'Switch between 2D Map and 3D Map');
-    toggle.innerHTML = `
-      <button type="button" class="vu-mode-btn active" data-mode="2d" id="btn-mode-2d">2D MAP</button>
-      <button type="button" class="vu-mode-btn" data-mode="3d" id="btn-mode-3d">3D MAP</button>
-    `;
+    if (!document.getElementById('vu-mode-toggle')) {
+      const toggle = document.createElement('div');
+      toggle.id = 'vu-mode-toggle';
+      toggle.className = 'vu-mode-toggle';
+      toggle.setAttribute('role', 'group');
+      toggle.setAttribute('aria-label', 'Switch between 2D Map and 3D Map');
+      toggle.innerHTML = `
+        <button type="button" class="vu-mode-btn active" data-mode="2d" id="btn-mode-2d">2D MAP</button>
+        <button type="button" class="vu-mode-btn" data-mode="3d" id="btn-mode-3d">3D MAP</button>
+      `;
 
-    const hamburger = headerInner.querySelector('.nav-hamburger');
-    if (hamburger && hamburger.parentNode === headerInner) {
-      headerInner.insertBefore(toggle, hamburger);
-    } else {
-      headerInner.appendChild(toggle);
+      const hamburger = headerInner.querySelector('.nav-hamburger');
+      if (hamburger && hamburger.parentNode === headerInner) {
+        headerInner.insertBefore(toggle, hamburger);
+      } else {
+        headerInner.appendChild(toggle);
+      }
+
+      toggle.querySelector('#btn-mode-2d').addEventListener('click', () => this.switchTo2D());
+      toggle.querySelector('#btn-mode-3d').addEventListener('click', () => this.switchTo3D());
     }
 
-    toggle.querySelector('#btn-mode-2d').addEventListener('click', () => this.switchTo2D());
-    toggle.querySelector('#btn-mode-3d').addEventListener('click', () => this.switchTo3D());
+    if (!document.getElementById('vu-theme-toggle')) {
+      const themeBtn = document.createElement('button');
+      themeBtn.type = 'button';
+      themeBtn.id = 'vu-theme-toggle';
+      themeBtn.className = 'vu-theme-btn';
+      themeBtn.addEventListener('click', () => this.toggleTheme());
+      const hamburger = headerInner.querySelector('.nav-hamburger');
+      if (hamburger && hamburger.parentNode === headerInner) {
+        headerInner.insertBefore(themeBtn, hamburger);
+      } else {
+        headerInner.appendChild(themeBtn);
+      }
+      this.applyTheme(this.theme);
+    }
   }
 
   enhance2DPages() {
@@ -252,18 +309,18 @@ class NavigatorController {
     overlay.setAttribute('aria-label', '3D Indoor Building Navigator');
 
     const floorButtonsHtml = [...FLOOR_DEFINITIONS].reverse().map(f => `
-      <button type="button" class="vu3d-floor-pill ${f.floorClass}" data-floor="${f.code}" title="${f.name}">
-        <span class="vu3d-floor-code">${f.code}</span>
+      <button type="button" class="vu3d-floor-pill ${f.floorClass}" data-floor="${f.code}" title="${f.name}" aria-label="${f.name}">
+        <span class="vu3d-floor-code">${f.name}</span>
       </button>
     `).join('');
 
     const startOptionsHtml = ENHANCED_ROOM_DB
       .filter(r => ['main-entrance', 'reception', 'student-support-office', 'registration', 'room-902', 'cafeteria'].includes(r.id) || r.floor === 'G')
-      .map(r => `<option value="${r.id}">${r.name} (Fl ${r.floor})</option>`)
+      .map(r => `<option value="${r.id}">${r.name} (${formatFloorLabel(r.floor)})</option>`)
       .join('');
 
     const allStartOptionsHtml = ENHANCED_ROOM_DB
-      .map(r => `<option value="${r.id}">${r.room !== '—' ? r.room + ' · ' : ''}${r.name} (Fl ${r.floor})</option>`)
+      .map(r => `<option value="${r.id}">${r.room !== '—' ? r.room + ' · ' : ''}${r.name} (${formatFloorLabel(r.floor)})</option>`)
       .join('');
 
     overlay.innerHTML = `
@@ -274,7 +331,7 @@ class NavigatorController {
           </button>
           <div class="vu3d-brand-badge">
             <strong>Market Plaza Tower · 3D</strong>
-            <span id="vu3d-active-floor-label">All Floors (B2–9)</span>
+            <span id="vu3d-active-floor-label">All Floors (Basement 2 – Floor 9)</span>
           </div>
         </div>
 
@@ -285,6 +342,7 @@ class NavigatorController {
           <button type="button" class="vu3d-view-btn" data-view="exploded">Exploded</button>
           <button type="button" class="vu3d-view-btn" id="vu3d-btn-topdown">Top-Down</button>
           <button type="button" class="vu3d-view-btn" id="vu3d-btn-reset">Reset View</button>
+          <button type="button" class="vu-theme-btn vu3d-theme-btn" id="vu3d-theme-toggle" aria-label="Toggle Dark Mode">🌙 Dark</button>
         </div>
 
         <button type="button" class="vu3d-mobile-panel-toggle" id="vu3d-mobile-panel-toggle">
@@ -310,7 +368,7 @@ class NavigatorController {
                 <optgroup label="Common Entrances &amp; Ground Floor">
                   ${startOptionsHtml}
                 </optgroup>
-                <optgroup label="All Rooms (B2–Floor 9)">
+                <optgroup label="All Rooms (Basement 2 – Floor 9)">
                   ${allStartOptionsHtml}
                 </optgroup>
               </select>
@@ -354,22 +412,28 @@ class NavigatorController {
           <div class="vu3d-hover-tooltip" id="vu3d-hover-tooltip" hidden></div>
 
           <div class="vu3d-floor-rail" aria-label="Floor Selector">
-            <button type="button" class="vu3d-floor-pill vu3d-floor-all active" data-floor="ALL" title="Entire Building">ALL</button>
+            <button type="button" class="vu3d-floor-pill vu3d-floor-all active" data-floor="ALL" title="All Floors">All Floors</button>
             ${floorButtonsHtml}
+          </div>
+
+          <div class="vu3d-floor-stepper" aria-label="Step Between Floors">
+            <button type="button" class="vu3d-step-nav" id="vu3d-prev-floor" title="Previous Floor Below">↓ Down</button>
+            <span class="vu3d-current-floor-pill" id="vu3d-current-floor-pill">Ground Floor</span>
+            <button type="button" class="vu3d-step-nav" id="vu3d-next-floor" title="Next Floor Above">↑ Up</button>
           </div>
 
           <div class="vu3d-legend-chip">
             <span><i style="background:#1b365d"></i>Office</span>
             <span><i style="background:#059669"></i>Lab / Medical</span>
             <span><i style="background:#d97706"></i>Study</span>
-            <span><i style="background:#00a0df"></i>Route</span>
-            <span><i style="background:#7c3aed"></i>Elevator</span>
+            <span><i style="background:#00f5d4"></i>Route</span>
+            <span><i style="background:#9333ea"></i>Elevator</span>
           </div>
 
           <div class="vu3d-bottom-bar" id="vu3d-bottom-bar" hidden>
             <button type="button" class="vu3d-step-nav" id="vu3d-prev-step">‹ Prev</button>
             <div class="vu3d-step-active-info">
-              <span class="vu3d-step-floor-pill" id="vu3d-step-floor-pill">FL G</span>
+              <span class="vu3d-step-floor-pill" id="vu3d-step-floor-pill">Ground Floor</span>
               <span class="vu3d-step-text" id="vu3d-step-text">—</span>
             </div>
             <div class="vu3d-bottom-actions">
@@ -384,12 +448,16 @@ class NavigatorController {
     document.body.appendChild(overlay);
     this.overlayEl = overlay;
     this.bindOverlayEvents();
+    this.applyTheme(this.theme);
   }
 
   bindOverlayEvents() {
     const el = this.overlayEl;
 
     el.querySelector('#vu3d-back-2d').addEventListener('click', () => this.switchTo2D());
+    el.querySelector('#vu3d-theme-toggle').addEventListener('click', () => this.toggleTheme());
+    el.querySelector('#vu3d-prev-floor').addEventListener('click', () => this.stepFloor(-1));
+    el.querySelector('#vu3d-next-floor').addEventListener('click', () => this.stepFloor(1));
 
     el.querySelector('#vu3d-mobile-panel-toggle').addEventListener('click', () => {
       el.querySelector('#vu3d-left-panel').classList.toggle('mobile-open');
@@ -493,6 +561,7 @@ class NavigatorController {
         const { SceneManager } = await import('./scene-manager.js');
         const mgr = new SceneManager(mount, {
           basePath: this.basePath,
+          isDark: this.theme === 'dark',
           onProgress: (pct, def) => {
             if (loaderText) {
               loaderText.textContent = `Building ${def.name} (${Math.round(pct * 100)}%)…`;
@@ -524,6 +593,16 @@ class NavigatorController {
     return this.initPromise;
   }
 
+  stepFloor(delta) {
+    const idx = FLOOR_DEFINITIONS.findIndex(f => f.code === this.activeFloor);
+    const curIdx = idx >= 0 ? idx : 2;
+    const nextIdx = Math.max(0, Math.min(FLOOR_DEFINITIONS.length - 1, curIdx + delta));
+    const nextCode = FLOOR_DEFINITIONS[nextIdx].code;
+    this.activeFloor = nextCode;
+    if (this.viewMode === 'building') this.viewMode = 'isolated';
+    this.setFloorAndView(nextCode, this.viewMode);
+  }
+
   setFloorAndView(floorCode, viewMode) {
     this.activeFloor = floorCode;
     this.viewMode = viewMode;
@@ -537,14 +616,19 @@ class NavigatorController {
       const isAll = b.dataset.floor === 'ALL' && (viewMode === 'building' || viewMode === 'exploded');
       const isSel = b.dataset.floor === floorCode && viewMode !== 'building';
       b.classList.toggle('active', isAll || isSel);
+      b.classList.toggle('has-pinned-dest', Boolean(this.selectedRoom && b.dataset.floor === this.selectedRoom.floor));
     });
 
-    const floorDef = FLOOR_MAP[floorCode];
     const lbl = el.querySelector('#vu3d-active-floor-label');
     if (lbl) {
       lbl.textContent = viewMode === 'building'
-        ? 'Entire Tower (B2–Floor 9)'
-        : `${floorDef ? floorDef.name : floorCode} · ${viewMode.charAt(0).toUpperCase() + viewMode.slice(1)}`;
+        ? 'All Floors (Basement 2 – Floor 9)'
+        : `${formatFloorLabel(floorCode)} · ${viewMode.charAt(0).toUpperCase() + viewMode.slice(1)}`;
+    }
+
+    const curPill = el.querySelector('#vu3d-current-floor-pill');
+    if (curPill) {
+      curPill.textContent = viewMode === 'building' ? 'All Floors' : formatFloorLabel(floorCode);
     }
 
     if (this.sceneManager) {
@@ -553,6 +637,11 @@ class NavigatorController {
       } else {
         this.sceneManager.focusFloor(floorCode, viewMode, this.topDown);
       }
+    }
+
+    // Re-render card banner if destination is pinned on another floor
+    if (this.selectedRoom) {
+      this.renderSelectedCard(this.selectedRoom);
     }
   }
 
@@ -568,16 +657,19 @@ class NavigatorController {
       box.innerHTML = '<div class="vu3d-no-results">No matching rooms found.</div>';
       return;
     }
-    box.innerHTML = matches.map(rm => `
-      <button type="button" class="vu3d-result-item" data-room-id="${rm.id}">
-        <span class="vu3d-res-floor ${rm.floorClass || ''}">${rm.floor}</span>
+    box.innerHTML = matches.map(rm => {
+      const isSelected = this.selectedRoom && this.selectedRoom.id === rm.id;
+      return `
+      <button type="button" class="vu3d-result-item ${isSelected ? 'selected-dest' : ''}" data-room-id="${rm.id}">
+        <span class="vu3d-res-floor ${rm.floorClass || ''}">${formatFloorLabel(rm.floor)}</span>
         <div class="vu3d-res-meta">
           <strong>${rm.name}</strong>
           <small>Room ${rm.room} · ${rm.category}</small>
         </div>
-        <span class="vu3d-res-go">Locate →</span>
+        <span class="vu3d-res-go">${isSelected ? 'Pinned' : 'Locate →'}</span>
       </button>
-    `).join('');
+    `;
+    }).join('');
 
     box.querySelectorAll('.vu3d-result-item').forEach(btn => {
       btn.addEventListener('click', () => {
@@ -598,24 +690,17 @@ class NavigatorController {
       return;
     }
     tip.hidden = false;
-    tip.textContent = `${rm.room !== '—' ? rm.room + ' · ' : ''}${rm.name} (Floor ${rm.floor})`;
+    tip.textContent = `${rm.room !== '—' ? rm.room + ' · ' : ''}${rm.name} (${formatFloorLabel(rm.floor)})`;
     const rect = this.overlayEl.querySelector('.vu3d-canvas-area').getBoundingClientRect();
-    tip.style.left = `${Math.min(evt.clientX - rect.left + 14, rect.width - 220)}px`;
+    tip.style.left = `${Math.min(evt.clientX - rect.left + 14, rect.width - 240)}px`;
     tip.style.top = `${Math.max(12, evt.clientY - rect.top - 32)}px`;
   }
 
-  handleSelectRoom(rm, moveCamera = true) {
-    if (!rm) return;
-    this.selectedRoom = rm;
-    this.activeFloor = rm.floor;
-    if (this.viewMode === 'building') this.viewMode = 'cutaway';
-
-    if (this.sceneManager) {
-      this.sceneManager.selectRoom(rm.id, moveCamera);
-    }
-    this.setFloorAndView(rm.floor, this.viewMode);
-
+  renderSelectedCard(rm) {
+    if (!rm || !this.overlayEl) return;
     const card = this.overlayEl.querySelector('#vu3d-selected-card');
+    if (!card) return;
+    const fullFloor = formatFloorLabel(rm.floor);
     const verBadge = rm.verificationStatus === 'verified-svg'
       ? '<span class="vu3d-badge verified">✓ SVG Verified</span>'
       : rm.verificationStatus === 'under-construction'
@@ -626,10 +711,19 @@ class NavigatorController {
       ? `<img src="${this.basePath}/${rm.image}" alt="${rm.name}" class="vu3d-room-thumb">`
       : '';
 
+    const onOtherFloor = this.viewMode !== 'building' && rm.floor !== this.activeFloor;
+    const pinnedBanner = onOtherFloor
+      ? `<div class="vu3d-pinned-banner">
+           <span>📍 Pinned on <strong>${fullFloor}</strong> (currently viewing ${formatFloorLabel(this.activeFloor)})</span>
+           <button type="button" class="vu3d-jump-pinned" id="vu3d-jump-pinned">Show ${fullFloor}</button>
+         </div>`
+      : '';
+
     card.innerHTML = `
+      ${pinnedBanner}
       <div class="vu3d-room-header">
         <div>
-          <span class="vu3d-room-pill">Floor ${rm.floor} · ${rm.room}</span>
+          <span class="vu3d-room-pill">${fullFloor} · ${rm.room}</span>
           <h3>${rm.name}</h3>
         </div>
         ${verBadge}
@@ -650,16 +744,49 @@ class NavigatorController {
     card.querySelector('#vu3d-btn-navigate').addEventListener('click', () => {
       this.startNavigationTo(rm);
     });
+    const jumpBtn = card.querySelector('#vu3d-jump-pinned');
+    if (jumpBtn) {
+      jumpBtn.addEventListener('click', () => {
+        this.activeFloor = rm.floor;
+        if (this.viewMode === 'building') this.viewMode = 'isolated';
+        this.setFloorAndView(rm.floor, this.viewMode);
+        if (this.sceneManager) this.sceneManager.cameraController.flyToRoom(rm, this.topDown);
+      });
+    }
   }
 
-  startNavigationTo(destRoom) {
+  handleSelectRoom(rm, moveCamera = true) {
+    if (!rm) return;
+    this.selectedRoom = rm;
+    this.activeFloor = rm.floor;
+    if (this.viewMode === 'building') this.viewMode = 'cutaway';
+
+    if (this.sceneManager) {
+      this.sceneManager.selectRoom(rm.id, moveCamera);
+    }
+    this.setFloorAndView(rm.floor, this.viewMode);
+    this.renderSelectedCard(rm);
+
+    // Automatically render animated NFS-style route arrows when a destination is selected
+    if (this.sceneManager && rm.id !== this.startRoomId) {
+      this.startNavigationTo(rm, { keepFocusOnRoom: true, preserveViewMode: true });
+    }
+  }
+
+  startNavigationTo(destRoom, options = {}) {
     if (!this.sceneManager || !destRoom) return;
     this.stopWalkthrough();
 
-    const route = this.sceneManager.calculateRoute(this.startRoomId, destRoom.id, this.routeMode);
+    const route = this.sceneManager.calculateRoute(this.startRoomId, destRoom.id, this.routeMode, options);
     if (!route) return;
     this.currentRoute = route;
     this.activeStepIdx = 0;
+
+    if (!options.preserveViewMode) {
+      this.activeFloor = this.sceneManager.building.activeFloorCode;
+      this.viewMode = this.sceneManager.building.viewMode;
+      this.setFloorAndView(this.activeFloor, this.viewMode);
+    }
 
     // Update right rail indicators to highlight route floors
     this.overlayEl.querySelectorAll('.vu3d-floor-pill').forEach(b => {
@@ -677,7 +804,7 @@ class NavigatorController {
 
     list.innerHTML = route.steps.map((s, idx) => `
       <li class="vu3d-step-item ${idx === 0 ? 'active' : ''} ${s.kind === 'notice' ? 'notice' : ''}" data-step-idx="${idx}">
-        <span class="vu3d-step-fl">${s.floor}</span>
+        <span class="vu3d-step-fl">${formatFloorLabel(s.floor)}</span>
         <span>${s.instruction}</span>
       </li>
     `).join('');
@@ -688,10 +815,10 @@ class NavigatorController {
       });
     });
 
-    this.goToStep(0);
+    this.goToStep(0, Boolean(options.keepFocusOnRoom));
   }
 
-  goToStep(idx) {
+  goToStep(idx, skipCameraMove = false) {
     if (!this.currentRoute || !this.currentRoute.steps.length) return;
     const steps = this.currentRoute.steps;
     this.activeStepIdx = Math.max(0, Math.min(idx, steps.length - 1));
@@ -702,17 +829,20 @@ class NavigatorController {
       if (i === this.activeStepIdx) li.scrollIntoView({ block: 'nearest' });
     });
 
-    this.overlayEl.querySelector('#vu3d-step-floor-pill').textContent = `FL ${step.floor}`;
+    this.overlayEl.querySelector('#vu3d-step-floor-pill').textContent = formatFloorLabel(step.floor);
     this.overlayEl.querySelector('#vu3d-step-text').textContent = step.instruction;
 
     if (this.sceneManager) {
       const targetFloor = step.toFloor || step.floor;
-      if (this.viewMode === 'isolated' || this.viewMode === 'cutaway') {
-        this.sceneManager.setViewMode(this.viewMode, targetFloor);
+      if (!skipCameraMove) {
+        if (this.viewMode === 'isolated' || this.viewMode === 'cutaway') {
+          this.sceneManager.setViewMode(this.viewMode, targetFloor);
+        }
+        this.sceneManager.cameraController.focusOnRouteStep(step);
       }
       this.sceneManager.building.moveElevatorCabToFloor(targetFloor);
       this.sceneManager.routeRenderer.highlightStep(step);
-      this.sceneManager.cameraController.focusOnRouteStep(step);
+      this.sceneManager.roomManager.refreshSelectionPosition();
     }
   }
 

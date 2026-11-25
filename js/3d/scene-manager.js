@@ -26,6 +26,7 @@ export class SceneManager {
   constructor(containerEl, options = {}) {
     this.container = containerEl;
     this.basePath = options.basePath || '.';
+    this.isDark = Boolean(options.isDark);
     this.onRoomSelect = options.onRoomSelect || (() => {});
     this.onRoomHover = options.onRoomHover || (() => {});
     this.onReady = options.onReady || (() => {});
@@ -56,8 +57,9 @@ export class SceneManager {
     const height = this.container.clientHeight || window.innerHeight - 64;
 
     this.scene = new THREE.Scene();
-    this.scene.background = new THREE.Color(0xeef4fa);
-    this.scene.fog = new THREE.Fog(0xeef4fa, 110, 230);
+    const bgHex = this.isDark ? 0x0b1325 : 0xeef4fa;
+    this.scene.background = new THREE.Color(bgHex);
+    this.scene.fog = new THREE.Fog(bgHex, 110, 230);
 
     this.camera = new THREE.PerspectiveCamera(45, width / height, 0.2, 450);
 
@@ -76,6 +78,7 @@ export class SceneManager {
 
     this.building = new BuildingGenerator(this.basePath);
     await this.building.buildAllFloors(this.onProgress);
+    if (this.isDark) this.building.setTheme(true);
     this.scene.add(this.building.rootGroup);
 
     this.roomManager = new RoomManager(this.building, this.scene);
@@ -158,6 +161,18 @@ export class SceneManager {
     this.renderer.setSize(width, height);
   }
 
+  setTheme(isDark) {
+    this.isDark = Boolean(isDark);
+    const bgHex = this.isDark ? 0x0b1325 : 0xeef4fa;
+    if (this.scene) {
+      this.scene.background = new THREE.Color(bgHex);
+      if (this.scene.fog) this.scene.fog.color.setHex(bgHex);
+    }
+    if (this.building) {
+      this.building.setTheme(this.isDark);
+    }
+  }
+
   setViewMode(mode, floorCode) {
     this.building.applyViewMode(mode, floorCode || this.building.activeFloorCode);
     this.roomManager.refreshSelectionPosition();
@@ -189,16 +204,19 @@ export class SceneManager {
     return rm;
   }
 
-  calculateRoute(startRoomId, destRoomId, mode = 'elevator') {
+  calculateRoute(startRoomId, destRoomId, mode = 'elevator', options = {}) {
     const route = this.pathfinder.findRoute(startRoomId, destRoomId, { mode });
     if (!route) return null;
-    // Show cutaway up to highest floor in route (or full building) so vertical transition is visible
-    const maxLvl = Math.max(route.startRoom.levelIndex, route.destRoom.levelIndex);
-    const highestCode = route.startRoom.levelIndex === maxLvl ? route.startRoom.floor : route.destRoom.floor;
-    this.building.applyViewMode(route.startRoom.floor === route.destRoom.floor ? 'isolated' : 'cutaway', highestCode);
+    if (!options.preserveViewMode) {
+      const maxLvl = Math.max(route.startRoom.levelIndex, route.destRoom.levelIndex);
+      const highestCode = route.startRoom.levelIndex === maxLvl ? route.startRoom.floor : route.destRoom.floor;
+      this.building.applyViewMode(route.startRoom.floor === route.destRoom.floor ? 'isolated' : 'cutaway', highestCode);
+    }
     this.roomManager.selectRoom(route.destRoom.id);
     this.routeRenderer.renderRoute(route);
-    this.cameraController.flyToFloor(route.startRoom.floor, false);
+    if (!options.keepFocusOnRoom) {
+      this.cameraController.flyToFloor(route.startRoom.floor, false);
+    }
     return route;
   }
 
